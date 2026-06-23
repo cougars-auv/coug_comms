@@ -23,7 +23,7 @@
  *
  *   offset  field                              encoding
  *   ------  ---------------------------------  -----------------------------
- *    0      MsgId::MSG_ORIGIN discriminator    uint8
+ *    0      MsgId::REQ_STATUS discriminator    uint8
  *    1- 6   local_odometry.position (x,y,z)    int16 x3, 1 cm (+/- 327.67 m)
  *    7-10   local_odometry.orientation         smallest-three quaternion
  *   11-22   odometry_covariance diagonal (6)   float16 x6
@@ -197,7 +197,7 @@ inline void unpackQuaternion(uint32_t packed, geometry_msgs::msg::Quaternion& qu
  */
 inline uint8_t encodeStatus(const coug_interfaces::msg::AgentStatus& status, uint8_t* buf) {
   size_t off = 0;
-  writeLE<uint8_t>(buf, off, static_cast<uint8_t>(MsgId::MSG_ORIGIN));
+  writeLE<uint8_t>(buf, off, static_cast<uint8_t>(MsgId::REQ_STATUS));
 
   const auto& pose = status.local_odometry;
   writeLE<int16_t>(buf, off, encodeMeters(pose.position.x));
@@ -220,14 +220,14 @@ inline uint8_t encodeStatus(const coug_interfaces::msg::AgentStatus& status, uin
  * @param buf The received payload.
  * @param len The payload length.
  * @param status The status to populate (header is left untouched).
- * @return True if the payload is long enough and carries the MSG_ORIGIN
+ * @return True if the payload is long enough and carries the REQ_STATUS
  * discriminator; false otherwise.
  */
 inline bool decodeStatus(const uint8_t* buf, uint8_t len,
                          coug_interfaces::msg::AgentStatus& status) {
   if (len < kStatusPacketLen) return false;
   size_t off = 0;
-  if (readLE<uint8_t>(buf, off) != static_cast<uint8_t>(MsgId::MSG_ORIGIN)) return false;
+  if (readLE<uint8_t>(buf, off) != static_cast<uint8_t>(MsgId::REQ_STATUS)) return false;
 
   auto& pose = status.local_odometry;
   pose.position.x = decodeMeters(readLE<int16_t>(buf, off));
