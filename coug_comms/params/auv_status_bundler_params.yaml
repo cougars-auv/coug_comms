@@ -1,4 +1,11 @@
 auv_status_bundler_node:
+  # --- Node Settings ---
+  publish_rate_hz:
+    type: double
+    default_value: 10.0
+    validation:
+      gt<>: [0.0]
+
   # --- ROS Topics ---
   status_topic:
     type: string

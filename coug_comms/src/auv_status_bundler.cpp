@@ -53,17 +53,34 @@ AuvStatusBundlerNode::AuvStatusBundlerNode(const rclcpp::NodeOptions& options)
   status_pub_ = create_publisher<coug_interfaces::msg::AgentStatus>(params_.status_topic,
                                                                     rclcpp::SystemDefaultsQoS());
 
+  timer_ = create_wall_timer(std::chrono::duration<double>(1.0 / params_.publish_rate_hz),
+                             std::bind(&AuvStatusBundlerNode::timerCallback, this));
+
   RCLCPP_INFO(get_logger(), "Startup complete! Waiting for sensor data to bundle...");
 }
 
 void AuvStatusBundlerNode::odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg) {
   last_odom_ = msg;
+}
+
+void AuvStatusBundlerNode::depthCallback(const nav_msgs::msg::Odometry::SharedPtr msg) {
+  last_depth_ = msg;
+}
+
+void AuvStatusBundlerNode::imuCallback(const sensor_msgs::msg::Imu::SharedPtr msg) {
+  last_imu_ = msg;
+}
+
+void AuvStatusBundlerNode::timerCallback() {
+  if (!last_odom_) {
+    return;
+  }
 
   coug_interfaces::msg::AgentStatus status;
-  status.header.stamp = msg->header.stamp;
+  status.header.stamp = now();
 
-  status.local_odometry = msg->pose.pose;
-  status.odometry_covariance = msg->pose.covariance;
+  status.local_odometry = last_odom_->pose.pose;
+  status.odometry_covariance = last_odom_->pose.covariance;
 
   if (last_depth_) {
     // Transform into the base_link frame
@@ -126,14 +143,6 @@ void AuvStatusBundlerNode::odomCallback(const nav_msgs::msg::Odometry::SharedPtr
   }
 
   status_pub_->publish(status);
-}
-
-void AuvStatusBundlerNode::depthCallback(const nav_msgs::msg::Odometry::SharedPtr msg) {
-  last_depth_ = msg;
-}
-
-void AuvStatusBundlerNode::imuCallback(const sensor_msgs::msg::Imu::SharedPtr msg) {
-  last_imu_ = msg;
 }
 
 }  // namespace coug_comms

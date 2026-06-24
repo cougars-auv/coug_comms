@@ -65,11 +65,17 @@ class AuvStatusBundlerNode : public rclcpp::Node {
    */
   void imuCallback(const sensor_msgs::msg::Imu::SharedPtr msg);
 
+  /**
+   * @brief Periodic timer callback to bundle and publish agent status.
+   */
+  void timerCallback();
+
   // --- ROS Interfaces ---
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr depth_sub_;
   rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr imu_sub_;
   rclcpp::Publisher<coug_interfaces::msg::AgentStatus>::SharedPtr status_pub_;
+  rclcpp::TimerBase::SharedPtr timer_;
 
   std::unique_ptr<tf2_ros::Buffer> tf_buffer_;
   std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
