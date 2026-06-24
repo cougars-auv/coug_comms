@@ -22,6 +22,7 @@
 #include "coug_comms/auv_status_bundler.hpp"
 
 #include <rclcpp_components/register_node_macro.hpp>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
 namespace coug_comms {
 
@@ -34,6 +35,9 @@ AuvStatusBundlerNode::AuvStatusBundlerNode(const rclcpp::NodeOptions& options)
   params_ = param_listener_->get_params();
 
   // --- ROS Interfaces ---
+  tf_buffer_ = std::make_unique<tf2_ros::Buffer>(this->get_clock());
+  tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+
   odom_sub_ = create_subscription<nav_msgs::msg::Odometry>(
       params_.odom_topic, rclcpp::SystemDefaultsQoS(),
       std::bind(&AuvStatusBundlerNode::odomCallback, this, std::placeholders::_1));
@@ -62,13 +66,61 @@ void AuvStatusBundlerNode::odomCallback(const nav_msgs::msg::Odometry::SharedPtr
   status.odometry_covariance = msg->pose.covariance;
 
   if (last_depth_) {
-    status.pressure_depth = last_depth_->pose.pose.position.z;
+    // Transform into the base_link frame
+    std::string depth_frame = last_depth_->child_frame_id;
+
+    geometry_msgs::msg::TransformStamped depth_T_base_tf;
+    try {
+      depth_T_base_tf =
+          tf_buffer_->lookupTransform(depth_frame, params_.base_frame, tf2::TimePointZero);
+
+      geometry_msgs::msg::Pose p_base_in_depth;
+      p_base_in_depth.position.x = depth_T_base_tf.transform.translation.x;
+      p_base_in_depth.position.y = depth_T_base_tf.transform.translation.y;
+      p_base_in_depth.position.z = depth_T_base_tf.transform.translation.z;
+      p_base_in_depth.orientation = depth_T_base_tf.transform.rotation;
+
+      geometry_msgs::msg::TransformStamped ref_T_depth_tf;
+      ref_T_depth_tf.header.frame_id = last_depth_->header.frame_id;
+      ref_T_depth_tf.child_frame_id = depth_frame;
+      ref_T_depth_tf.transform.translation.x = last_depth_->pose.pose.position.x;
+      ref_T_depth_tf.transform.translation.y = last_depth_->pose.pose.position.y;
+      ref_T_depth_tf.transform.translation.z = last_depth_->pose.pose.position.z;
+      ref_T_depth_tf.transform.rotation = last_depth_->pose.pose.orientation;
+
+      geometry_msgs::msg::Pose p_base_in_ref;
+      tf2::doTransform(p_base_in_depth, p_base_in_ref, ref_T_depth_tf);
+      status.pressure_depth = p_base_in_ref.position.z;
+    } catch (const tf2::TransformException& ex) {
+      RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 1000, "Could not transform %s to %s: %s",
+                           depth_frame.c_str(), params_.base_frame.c_str(), ex.what());
+      status.pressure_depth = last_depth_->pose.pose.position.z;
+    }
   } else {
     status.pressure_depth = 0.0;
   }
 
   if (last_imu_) {
-    status.imu_orientation = last_imu_->orientation;
+    // Transform into the base_link frame
+    std::string imu_frame = last_imu_->header.frame_id;
+
+    geometry_msgs::msg::TransformStamped imu_T_base_tf;
+    try {
+      imu_T_base_tf =
+          tf_buffer_->lookupTransform(imu_frame, params_.base_frame, tf2::TimePointZero);
+
+      tf2::Quaternion q_ref_imu, q_imu_base;
+      tf2::fromMsg(last_imu_->orientation, q_ref_imu);
+      tf2::fromMsg(imu_T_base_tf.transform.rotation, q_imu_base);
+
+      tf2::Quaternion q_ref_base = q_ref_imu * q_imu_base;
+      q_ref_base.normalize();
+      status.imu_orientation = tf2::toMsg(q_ref_base);
+    } catch (const tf2::TransformException& ex) {
+      RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 1000, "Could not transform %s to %s: %s",
+                           imu_frame.c_str(), params_.base_frame.c_str(), ex.what());
+      status.imu_orientation = last_imu_->orientation;
+    }
   } else {
     status.imu_orientation.w = 1.0;
   }

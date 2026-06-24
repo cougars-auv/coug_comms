@@ -42,6 +42,16 @@ def generate_launch_description() -> LaunchDescription:
         ]
     )
 
+    base_link_frame = PythonExpression(
+        [
+            "'",
+            auv_ns,
+            "/base_link' if '",
+            auv_ns,
+            "' != '' else 'base_link'",
+        ]
+    )
+
     return LaunchDescription(
         [
             DeclareLaunchArgument(
@@ -81,7 +91,10 @@ def generate_launch_description() -> LaunchDescription:
                 parameters=[
                     fleet_params,
                     auv_params,
-                    {"use_sim_time": use_sim_time},
+                    {
+                        "use_sim_time": use_sim_time,
+                        "base_frame": base_link_frame,
+                    },
                 ],
             ),
         ]

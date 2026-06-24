@@ -20,3 +20,9 @@ auv_status_bundler_node:
     default_value: "imu/data"
     validation:
       not_empty<>: []
+
+  base_frame:
+    type: string
+    default_value: "base_link"
+    validation:
+      not_empty<>: []
