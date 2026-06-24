@@ -61,7 +61,7 @@ TEST(StatusCodecTest, RoundTrip) {
   const uint8_t len = encodeStatus(in, buf.data());
   ASSERT_EQ(len, kStatusPacketLen);
   ASSERT_LE(len, 30u);
-  EXPECT_EQ(buf[0], static_cast<uint8_t>(MsgId::REQ_STATUS));
+  EXPECT_EQ(buf[0], static_cast<uint8_t>(MsgId::RESP_STATUS));
 
   AgentStatus out;
   ASSERT_TRUE(decodeStatus(buf.data(), len, out));
