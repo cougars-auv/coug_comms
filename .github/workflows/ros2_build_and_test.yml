@@ -65,6 +65,7 @@ jobs:
             vcs custom -n --git --args submodule update --init --recursive
           BEFORE_RUN_TARGET_TEST: |
             apt-get update && apt-get install -y lcov python3-colcon-lcov-result
+            printf 'ignore_errors = mismatch\nignore_errors = gcov\ngeninfo_unexecuted_blocks = 1\n' >> /etc/lcovrc
             cd "$target_ws" && colcon lcov-result --initial
           AFTER_RUN_TARGET_TEST: |
             cd "$target_ws" && colcon lcov-result --filter '/usr/*' '/opt/*' '*/test/*' || true
