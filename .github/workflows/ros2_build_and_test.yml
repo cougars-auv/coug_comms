@@ -37,8 +37,8 @@ jobs:
         runner: [ ubuntu-24.04, ubuntu-24.04-arm ]
     runs-on: ${{ matrix.runner }}
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/cache@v6
+      - uses: actions/checkout@v6
+      - uses: actions/cache@v5
         with:
           path: ${{ github.workspace }}/.ccache
           key: ccache-${{ github.repository }}-${{ matrix.runner }}-${{ github.run_id }}
@@ -65,10 +65,9 @@ jobs:
             vcs custom -n --git --args submodule update --init --recursive
           BEFORE_RUN_TARGET_TEST: |
             apt-get update && apt-get install -y lcov python3-colcon-lcov-result
-            printf 'ignore_errors = mismatch\nignore_errors = gcov\ngeninfo_unexecuted_blocks = 1\n' >> /etc/lcovrc
-            cd "$target_ws" && colcon lcov-result --initial
+            cd "$target_ws" && colcon lcov-result --initial --lcov-args=--ignore-errors=mismatch,gcov,negative
           AFTER_RUN_TARGET_TEST: |
-            cd "$target_ws" && colcon lcov-result --filter '/usr/*' '/opt/*' '*/test/*' || true
+            cd "$target_ws" && colcon lcov-result --filter '/usr/*' '/opt/*' '*/test/*' --lcov-args=--ignore-errors=mismatch,gcov,negative || true
       - if: matrix.runner == 'ubuntu-24.04'
         continue-on-error: true
         run: |
