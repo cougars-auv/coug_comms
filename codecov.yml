@@ -1,8 +1,6 @@
-# Codecov processes the gcov data left in the build tree itself (no lcov step).
-# These paths are produced inside the industrial_ci container, which mounts the
-# workspace at its host path, so map them back to repo-relative paths here.
 fixes:
-  - "/home/runner/work/coug_comms/coug_comms/.work/target_ws/src/coug_comms/::"
+  - "**/target_ws/src/*/::"
 
 ignore:
   - "**/test/**"
+  - "**/setup.py"
