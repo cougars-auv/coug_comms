@@ -79,7 +79,7 @@ void AuvStatusStagerNode::checkStatus(diagnostic_updater::DiagnosticStatusWrappe
   stat.add("Time Since Last (s)", time_since);
 
   if (time_since > params_.diagnostic_timeout_sec || last_status_time_ == 0.0) {
-    stat.summary(diagnostic_msgs::msg::DiagnosticStatus::ERROR, "No status to relay.");
+    stat.summary(diagnostic_msgs::msg::DiagnosticStatus::ERROR, "No status to stage.");
   } else {
     stat.summary(diagnostic_msgs::msg::DiagnosticStatus::OK, "Status staged successfully.");
   }

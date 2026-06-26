@@ -247,8 +247,7 @@ void BaseStatusPollerNode::checkAgentPollStatus(diagnostic_updater::DiagnosticSt
   if (a.responses == 0 || time_since > params_.diagnostic_timeout_sec) {
     stat.summary(diagnostic_msgs::msg::DiagnosticStatus::WARN, "Agent is offline.");
   } else {
-    stat.summary(diagnostic_msgs::msg::DiagnosticStatus::OK,
-                 "Agent is online (" + a.last_transport + ").");
+    stat.summary(diagnostic_msgs::msg::DiagnosticStatus::OK, "Agent is online.");
   }
 }
 

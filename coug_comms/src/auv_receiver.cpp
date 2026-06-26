@@ -135,11 +135,12 @@ void AuvReceiverNode::checkServiceStatus(diagnostic_updater::DiagnosticStatusWra
     return;
   }
 
-  size_t index = 1;
+  std::string history_str;
   for (auto it = service_history_.rbegin(); it != service_history_.rend(); ++it) {
-    stat.add(std::to_string(index++), it->service + " (" + it->transport + ")" +
-                                          (it->succeeded ? ": succeeded" : ": failed"));
+    history_str += "\n" + it->service + " (" + it->transport + ")" +
+                   (it->succeeded ? ": succeeded" : ": failed");
   }
+  stat.add("Service History", history_str);
 
   const ServiceResult& latest = service_history_.back();
   if (latest.succeeded) {

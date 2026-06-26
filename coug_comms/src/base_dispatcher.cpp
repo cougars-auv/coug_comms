@@ -225,11 +225,12 @@ void BaseDispatcherNode::checkAgentServiceStatus(diagnostic_updater::DiagnosticS
     return;
   }
 
-  size_t index = 1;
+  std::string history_str;
   for (auto it = a.service_history.rbegin(); it != a.service_history.rend(); ++it) {
-    stat.add(std::to_string(index++), it->service + " (" + it->transport + ")" +
-                                          (it->succeeded ? ": succeeded" : ": failed"));
+    history_str += "\n" + it->service + " (" + it->transport + ")" +
+                   (it->succeeded ? ": succeeded" : ": failed");
   }
+  stat.add("Service History", history_str);
 
   const ServiceResult& latest = a.service_history.back();
   if (latest.succeeded) {
