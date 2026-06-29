@@ -76,7 +76,7 @@ BaseDispatcherNode::BaseDispatcherNode(const rclcpp::NodeOptions& options)
     registerAgent(aname, static_cast<uint8_t>(raw_id), prefix);
   }
 
-  RCLCPP_INFO(get_logger(), "Startup complete! Waiting for services...");
+  RCLCPP_INFO(get_logger(), "Startup complete! Waiting for service requests...");
 }
 
 void BaseDispatcherNode::registerAgent(const std::string& aname, uint8_t beacon_id,

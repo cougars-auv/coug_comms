@@ -56,7 +56,7 @@ AuvStatusBundlerNode::AuvStatusBundlerNode(const rclcpp::NodeOptions& options)
   timer_ = create_wall_timer(std::chrono::duration<double>(1.0 / params_.publish_rate_hz),
                              std::bind(&AuvStatusBundlerNode::timerCallback, this));
 
-  RCLCPP_INFO(get_logger(), "Startup complete! Waiting for sensor data to bundle...");
+  RCLCPP_INFO(get_logger(), "Startup complete! Waiting for sensor data...");
 }
 
 void AuvStatusBundlerNode::odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg) {

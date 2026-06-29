@@ -59,7 +59,7 @@ AuvReceiverNode::AuvReceiverNode(const rclcpp::NodeOptions& options)
     diagnostic_updater_.add(cmd_task, this, &AuvReceiverNode::checkServiceStatus);
   }
 
-  RCLCPP_INFO(get_logger(), "Startup complete! Waiting for acoustic services...");
+  RCLCPP_INFO(get_logger(), "Startup complete! Waiting for acoustic messages...");
 }
 
 void AuvReceiverNode::modemRecCallback(const seatrac_interfaces::msg::ModemRec::SharedPtr msg) {
