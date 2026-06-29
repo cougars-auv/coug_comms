@@ -40,7 +40,7 @@ BaseStatusExtractorNode::BaseStatusExtractorNode(const rclcpp::NodeOptions& opti
     registerAgent(aname);
   }
 
-  RCLCPP_INFO(get_logger(), "Startup complete! Waiting for AgentStatus messages...");
+  RCLCPP_INFO(get_logger(), "Startup complete! Waiting for status updates...");
 }
 
 void BaseStatusExtractorNode::registerAgent(const std::string& aname) {
