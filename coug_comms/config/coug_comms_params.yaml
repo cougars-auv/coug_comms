@@ -6,7 +6,7 @@
   base_dispatcher_node:
     ros__parameters:
       # --- Node Settings ---
-      publish_diagnostics: false # Publish diagnostic information.
+      publish_diagnostics: true # Publish diagnostic information.
       service_history_size: 5
 
       direct_timeout_sec: 2.0 # [s] Direct link timeout
@@ -32,7 +32,7 @@
   auv_receiver_node:
     ros__parameters:
       # --- Node Settings ---
-      publish_diagnostics: false # Publish diagnostic information.
+      publish_diagnostics: true # Publish diagnostic information.
       service_history_size: 5
 
       # --- ROS Topics ---
@@ -48,7 +48,7 @@
   base_status_poller_node:
     ros__parameters:
       # --- Node Settings ---
-      publish_diagnostics: false # Publish diagnostic information.
+      publish_diagnostics: true # Publish diagnostic information.
       diagnostic_timeout_sec: 10.0 # [s]
 
       direct_timeout_sec: 2.0 # [s] Direct link timeout
@@ -67,7 +67,7 @@
   auv_status_stager_node:
     ros__parameters:
       # --- Node Settings ---
-      publish_diagnostics: false # Publish diagnostic information.
+      publish_diagnostics: true # Publish diagnostic information.
       diagnostic_timeout_sec: 0.5 # [s]
 
       # --- ROS Topics ---
