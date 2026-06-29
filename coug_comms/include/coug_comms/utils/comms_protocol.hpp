@@ -26,6 +26,10 @@
 
 namespace coug_comms::utils {
 
+/**
+ * @enum MsgId
+ * @brief Messages identifiers for the comms protocol.
+ */
 enum class MsgId : uint8_t {
   SRV_START = 0x10,
   SRV_STOP = 0x11,
