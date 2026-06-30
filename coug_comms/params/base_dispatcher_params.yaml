@@ -61,7 +61,7 @@ base_dispatcher_node:
 
   direct_status_topic:
     type: string
-    default_value: "status"
+    default_value: "agent/status"
     validation:
       not_empty<>: []
   direct_start_service:

@@ -9,7 +9,7 @@ auv_status_bundler_node:
   # --- ROS Topics ---
   status_topic:
     type: string
-    default_value: "status"
+    default_value: "agent/status"
     validation:
       not_empty<>: []
   odom_topic:

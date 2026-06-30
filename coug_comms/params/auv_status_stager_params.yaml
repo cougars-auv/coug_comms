@@ -17,6 +17,6 @@ auv_status_stager_node:
       not_empty<>: []
   status_topic:
     type: string
-    default_value: "status"
+    default_value: "agent/status"
     validation:
       not_empty<>: []
