@@ -9,6 +9,9 @@ base_status_poller_node:
     validation:
       gt<>: [0.0]
 
+  lead_agent:
+    type: string
+    default_value: ""
   enable_direct_comms:
     type: bool
     default_value: true

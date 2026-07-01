@@ -26,38 +26,44 @@ from launch.substitutions import (
 
 def launch_setup(context, *args, **kwargs) -> list:
     use_sim_time = LaunchConfiguration("use_sim_time")
+    lead_agent = LaunchConfiguration("lead_agent")
+    lead_agent_ns = lead_agent.perform(context)
     enable_direct_comms = LaunchConfiguration("enable_direct_comms")
     enable_acoustic_comms = LaunchConfiguration("enable_acoustic_comms")
     agent_list_str = LaunchConfiguration("agent_list").perform(context)
 
     agent_namespaces = yaml.safe_load(agent_list_str)
 
+    dispatcher_modem_topics = {}
+    poller_modem_topics = {}
+    if lead_agent_ns:
+        dispatcher_modem_topics = {"modem_send_topic": f"/{lead_agent_ns}/modem_send"}
+        poller_modem_topics = {
+            "modem_send_topic": f"/{lead_agent_ns}/modem_send",
+            "modem_rec_topic": f"/{lead_agent_ns}/modem_rec",
+            "modem_cmd_update_topic": f"/{lead_agent_ns}/modem_cmd_update",
+        }
+
     config_dir = os.environ.get("CONFIG_DIR", "")
 
-    fleet_default_beacon_id = None
-    fleet_params_path = os.path.join(config_dir, "fleet", "coug_comms_params.yaml")
-    if os.path.isfile(fleet_params_path):
-        with open(fleet_params_path) as f:
-            fleet_config = yaml.safe_load(f) or {}
-        fleet_comms = (
-            fleet_config.get("/**", {})
-            .get("coug_comms_base_launch", {})
-            .get("ros__parameters", {})
-        )
-        fleet_default_beacon_id = fleet_comms.get("beacon_id")
+    def load_launch_params(path, top_key):
+        if not os.path.isfile(path):
+            return {}
+        with open(path) as f:
+            config = yaml.safe_load(f) or {}
+        return ((config.get(top_key) or {}).get("coug_comms_base_launch") or {}).get(
+            "ros__parameters"
+        ) or {}
 
+    fleet_defaults = load_launch_params(
+        os.path.join(config_dir, "fleet", "coug_comms_params.yaml"), "/**"
+    )
     beacon_ids = {}
     for ns in agent_namespaces:
-        beacon_id = fleet_default_beacon_id
-        agent_params_path = os.path.join(config_dir, f"{ns}_params.yaml")
-        if os.path.isfile(agent_params_path):
-            with open(agent_params_path) as f:
-                agent_params = yaml.safe_load(f) or {}
-            ns_params = agent_params.get(f"/{ns}", {})
-            comms_params = ns_params.get("coug_comms_base_launch", {}).get(
-                "ros__parameters", {}
-            )
-            beacon_id = comms_params.get("beacon_id", beacon_id)
+        agent_params = load_launch_params(
+            os.path.join(config_dir, f"{ns}_params.yaml"), f"/{ns}"
+        )
+        beacon_id = agent_params.get("beacon_id", fleet_defaults.get("beacon_id"))
         if beacon_id is not None:
             beacon_ids[ns] = beacon_id
 
@@ -81,8 +87,10 @@ def launch_setup(context, *args, **kwargs) -> list:
                     "agent_namespaces": agent_namespaces,
                     "beacon_ids": beacon_ids,
                     "use_sim_time": use_sim_time,
+                    "lead_agent": lead_agent,
                     "enable_direct_comms": enable_direct_comms,
                     "enable_acoustic_comms": enable_acoustic_comms,
+                    **dispatcher_modem_topics,
                 },
             ],
         ),
@@ -97,8 +105,10 @@ def launch_setup(context, *args, **kwargs) -> list:
                     "agent_namespaces": agent_namespaces,
                     "beacon_ids": beacon_ids,
                     "use_sim_time": use_sim_time,
+                    "lead_agent": lead_agent,
                     "enable_direct_comms": enable_direct_comms,
                     "enable_acoustic_comms": enable_acoustic_comms,
+                    **poller_modem_topics,
                 },
             ],
         ),
@@ -133,6 +143,11 @@ def generate_launch_description() -> LaunchDescription:
                     "YAML list of agent namespaces "
                     "(e.g. '[coug1sim]' or '[coug1sim, coug2sim]')"
                 ),
+            ),
+            DeclareLaunchArgument(
+                "lead_agent",
+                default_value="",
+                description="Namespace of the lead agent (optional)",
             ),
             DeclareLaunchArgument(
                 "enable_direct_comms",

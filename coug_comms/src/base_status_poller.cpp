@@ -87,11 +87,12 @@ void BaseStatusPollerNode::registerAgent(const std::string& aname, uint8_t beaco
   AgentEntry a;
   a.name = aname;
   a.beacon_id = beacon_id;
+  a.is_lead = (aname == params_.lead_agent);
   a.status_pub = create_publisher<coug_interfaces::msg::AgentStatus>(
       "/" + aname + "/" + params_.status_topic, rclcpp::SystemDefaultsQoS());
   a.last_response_time = now();
 
-  if (params_.enable_direct_comms) {
+  if (params_.enable_direct_comms || a.is_lead) {
     a.direct_sub = create_subscription<coug_interfaces::msg::AgentStatus>(
         "/" + aname + "/" + params_.direct_status_topic, rclcpp::SystemDefaultsQoS(),
         [this, beacon_id](const coug_interfaces::msg::AgentStatus::SharedPtr msg) {
@@ -102,8 +103,10 @@ void BaseStatusPollerNode::registerAgent(const std::string& aname, uint8_t beaco
         });
   }
 
+  if (!a.is_lead) {
+    beacon_order_.push_back(beacon_id);
+  }
   agents_.emplace(beacon_id, std::move(a));
-  beacon_order_.push_back(beacon_id);
 
   if (params_.publish_diagnostics) {
     diagnostic_updater_.add(diag_prefix + "Polling Status (" + aname + ")",

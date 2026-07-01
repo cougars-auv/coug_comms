@@ -84,6 +84,7 @@ void BaseDispatcherNode::registerAgent(const std::string& aname, uint8_t beacon_
   AgentEntry a;
   a.name = aname;
   a.beacon_id = beacon_id;
+  a.is_lead = (aname == params_.lead_agent);
 
   for (const auto& spec : services_) {
     const MsgId cmd = spec.cmd;
@@ -98,7 +99,7 @@ void BaseDispatcherNode::registerAgent(const std::string& aname, uint8_t beacon_
         create_client<std_srvs::srv::Trigger>("/" + aname + "/" + spec.direct_service);
   }
 
-  if (params_.enable_direct_comms) {
+  if (params_.enable_direct_comms || a.is_lead) {
     a.direct_heartbeat_sub = create_subscription<coug_interfaces::msg::AgentStatus>(
         "/" + aname + "/" + params_.direct_status_topic, rclcpp::SystemDefaultsQoS(),
         [this, beacon_id](const coug_interfaces::msg::AgentStatus::SharedPtr) {
@@ -125,13 +126,13 @@ void BaseDispatcherNode::handleServiceRequest(
   AgentEntry& agent = agents_.at(beacon_id);
   const std::string name = utils::toString(cmd);
 
-  if (params_.enable_direct_comms) {
+  if (params_.enable_direct_comms || agent.is_lead) {
     if (directServiceDispatch(cmd, agent, service, header)) {
       return;
     }
   }
 
-  if (params_.enable_acoustic_comms) {
+  if (params_.enable_acoustic_comms && !agent.is_lead) {
     acousticServiceDispatch(cmd, beacon_id, service, header);
     recordServiceResult(beacon_id, name, "ACOUSTIC", true);
     return;
