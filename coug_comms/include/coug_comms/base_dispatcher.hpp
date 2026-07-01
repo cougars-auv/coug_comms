@@ -32,7 +32,7 @@
 #include <vector>
 
 #include "coug_comms/base_dispatcher_parameters.hpp"
-#include "coug_comms/utils/comms_protocol.hpp"
+#include "coug_comms/utils/protocol_enums.hpp"
 #include "coug_interfaces/msg/agent_status.hpp"
 
 namespace coug_comms {

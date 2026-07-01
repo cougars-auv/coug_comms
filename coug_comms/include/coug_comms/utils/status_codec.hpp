@@ -42,7 +42,7 @@
 #include <cstdint>
 #include <cstring>
 
-#include "coug_comms/utils/comms_protocol.hpp"
+#include "coug_comms/utils/protocol_enums.hpp"
 #include "coug_interfaces/msg/agent_status.hpp"
 #include "geometry_msgs/msg/quaternion.hpp"
 

@@ -123,7 +123,7 @@ void BaseDispatcherNode::handleServiceRequest(
     MsgId cmd, uint8_t beacon_id, rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr service,
     std::shared_ptr<rmw_request_id_t> header) {
   AgentEntry& agent = agents_.at(beacon_id);
-  const std::string name = utils::messageType(cmd);
+  const std::string name = utils::toString(cmd);
 
   if (params_.enable_direct_comms) {
     if (directServiceDispatch(cmd, agent, service, header)) {
@@ -157,7 +157,7 @@ bool BaseDispatcherNode::directServiceDispatch(
     return false;
   }
 
-  const std::string label = utils::messageType(cmd);
+  const std::string label = utils::toString(cmd);
   const uint8_t beacon_id = agent.beacon_id;
   client_it->second->async_send_request(
       std::make_shared<std_srvs::srv::Trigger::Request>(),
@@ -198,7 +198,7 @@ void BaseDispatcherNode::acousticServiceDispatch(
 
   std_srvs::srv::Trigger::Response res;
   res.success = true;
-  res.message = utils::messageType(cmd) + " queued (acomms)";
+  res.message = utils::toString(cmd) + " queued (acomms)";
   service->send_response(*header, res);
   RCLCPP_INFO(get_logger(), "%s", res.message.c_str());
 }

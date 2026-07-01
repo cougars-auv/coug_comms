@@ -13,7 +13,7 @@
 // limitations under the License.
 
 /**
- * @file comms_protocol.hpp
+ * @file protocol_enums.hpp
  * @brief Shared messaging protocol for radio and acoustic comms.
  * @author Nelson Durrant
  * @date June 2026
@@ -42,11 +42,11 @@ enum class MsgId : uint8_t {
 };
 
 /**
- * @brief Returns the human-readable name of a message type.
- * @param msg The message type to name.
- * @return The message name, or "MSG_UNKNOWN" if unrecognized.
+ * @brief Maps a MsgId to its name for logging and diagnostics.
+ * @param msg The MsgId enum value to convert.
+ * @return The string representation of the MsgId.
  */
-inline std::string messageType(MsgId msg) {
+inline std::string toString(MsgId msg) {
   switch (msg) {
     case MsgId::SRV_START:
       return "SRV_START";

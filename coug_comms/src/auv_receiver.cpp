@@ -90,14 +90,13 @@ void AuvReceiverNode::modemRecCallback(const seatrac_interfaces::msg::ModemRec::
       return;
   }
 
-  RCLCPP_INFO(get_logger(), "Received %s from beacon %d", utils::messageType(id).c_str(),
-              msg->src_id);
+  RCLCPP_INFO(get_logger(), "Received %s from beacon %d", utils::toString(id).c_str(), msg->src_id);
   callService(client, id);
 }
 
 void AuvReceiverNode::callService(rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr client,
                                   MsgId cmd) {
-  const std::string service = utils::messageType(cmd);
+  const std::string service = utils::toString(cmd);
   if (!client->service_is_ready()) {
     RCLCPP_ERROR(get_logger(), "Service not available: %s", service.c_str());
     recordServiceResult(service, "ACOUSTIC", false);

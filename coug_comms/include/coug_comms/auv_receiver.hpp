@@ -30,7 +30,7 @@
 #include <string>
 
 #include "coug_comms/auv_receiver_parameters.hpp"
-#include "coug_comms/utils/comms_protocol.hpp"
+#include "coug_comms/utils/protocol_enums.hpp"
 
 namespace coug_comms {
 

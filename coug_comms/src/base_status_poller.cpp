@@ -24,7 +24,7 @@
 #include <cmath>
 #include <rclcpp_components/register_node_macro.hpp>
 
-#include "coug_comms/utils/comms_protocol.hpp"
+#include "coug_comms/utils/protocol_enums.hpp"
 #include "coug_comms/utils/seatrac_enums.hpp"
 #include "coug_comms/utils/status_codec.hpp"
 
