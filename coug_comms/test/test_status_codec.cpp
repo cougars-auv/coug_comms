@@ -31,7 +31,6 @@ using coug_comms::utils::decodeStatus;
 using coug_comms::utils::encodeStatus;
 using coug_comms::utils::kStatusPacketLen;
 using coug_comms::utils::MsgId;
-using coug_interfaces::msg::AgentStatus;
 
 /**
  * @brief Verify every transmitted field survives an encode/decode round-trip.
@@ -43,7 +42,7 @@ TEST(StatusCodecTest, RoundTrip) {
     return 2.0 * std::acos(dot) * 180.0 / M_PI;
   };
 
-  AgentStatus in;
+  coug_interfaces::msg::AgentStatus in;
   in.local_odometry.position.x = 12.34;
   in.local_odometry.position.y = -56.78;
   in.local_odometry.position.z = 3.20;
@@ -63,7 +62,7 @@ TEST(StatusCodecTest, RoundTrip) {
   ASSERT_LE(len, 30u);
   EXPECT_EQ(buf[0], static_cast<uint8_t>(MsgId::RESP_STATUS));
 
-  AgentStatus out;
+  coug_interfaces::msg::AgentStatus out;
   ASSERT_TRUE(decodeStatus(buf.data(), len, out));
 
   EXPECT_NEAR(out.local_odometry.position.x, in.local_odometry.position.x, 0.005);
@@ -82,13 +81,13 @@ TEST(StatusCodecTest, RoundTrip) {
  * @brief Verify only the covariance diagonal is kept; off-diagonals decode to zero.
  */
 TEST(StatusCodecTest, DropsOffDiagonalCovariance) {
-  AgentStatus in;
+  coug_interfaces::msg::AgentStatus in;
   in.odometry_covariance[1] = 99.0;
   in.odometry_covariance[6] = 99.0;
 
   std::array<uint8_t, 30> buf{};
   const uint8_t len = encodeStatus(in, buf.data());
-  AgentStatus out;
+  coug_interfaces::msg::AgentStatus out;
   ASSERT_TRUE(decodeStatus(buf.data(), len, out));
 
   EXPECT_DOUBLE_EQ(out.odometry_covariance[1], 0.0);
@@ -100,8 +99,8 @@ TEST(StatusCodecTest, DropsOffDiagonalCovariance) {
  */
 TEST(StatusCodecTest, RejectsInvalidPayload) {
   std::array<uint8_t, 30> buf{};
-  const uint8_t len = encodeStatus(AgentStatus(), buf.data());
-  AgentStatus out;
+  const uint8_t len = encodeStatus(coug_interfaces::msg::AgentStatus(), buf.data());
+  coug_interfaces::msg::AgentStatus out;
 
   EXPECT_FALSE(decodeStatus(buf.data(), len - 1, out));
   buf[0] = static_cast<uint8_t>(MsgId::SRV_START);
