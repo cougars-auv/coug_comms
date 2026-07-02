@@ -21,6 +21,8 @@
 
 #pragma once
 
+#include <tf2_ros/transform_broadcaster.h>
+
 #include <cstdint>
 #include <diagnostic_updater/diagnostic_updater.hpp>
 #include <memory>
@@ -124,6 +126,14 @@ class BaseStatusPollerNode : public rclcpp::Node {
   void failPendingRequest(const char* reason);
 
   /**
+   * @brief Broadcasts a transform to a "polled" frame at the agent's acoustic fix.
+   * @param agent The agent the fix belongs to.
+   * @param msg The incoming modem message carrying the acoustic fix.
+   */
+  void publishPolledTransform(const AgentEntry& agent,
+                              const seatrac_interfaces::msg::ModemRec& msg);
+
+  /**
    * @brief Diagnostic task reporting whether one agent is online and its direct-link heartbeat.
    * @param stat The diagnostic status wrapper.
    * @param beacon_id The agent's beacon ID.
@@ -136,6 +146,7 @@ class BaseStatusPollerNode : public rclcpp::Node {
   rclcpp::Publisher<seatrac_interfaces::msg::ModemSend>::SharedPtr modem_send_pub_;
   rclcpp::TimerBase::SharedPtr tick_timer_;
   diagnostic_updater::Updater diagnostic_updater_;
+  std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
 
   // --- Parameters ---
   std::shared_ptr<base_status_poller_node::ParamListener> param_listener_;

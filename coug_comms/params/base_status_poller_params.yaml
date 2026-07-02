@@ -39,7 +39,7 @@ base_status_poller_node:
     validation:
       gt<>: [0.0]
 
-  # --- ROS Topics ---
+  # --- ROS Topics and Frames ---
   modem_send_topic:
     type: string
     default_value: "modem_send"
@@ -64,5 +64,14 @@ base_status_poller_node:
   direct_status_topic:
     type: string
     default_value: "agent/status"
+    validation:
+      not_empty<>: []
+
+  use_parameter_frame:
+    type: bool
+    default_value: false
+  parameter_frame:
+    type: string
+    default_value: "modem_link"
     validation:
       not_empty<>: []

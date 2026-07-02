@@ -21,6 +21,7 @@ from launch.substitutions import (
     EnvironmentVariable,
     LaunchConfiguration,
     PathJoinSubstitution,
+    PythonExpression,
 )
 
 
@@ -33,6 +34,24 @@ def launch_setup(context, *args, **kwargs) -> list:
     agent_list_str = LaunchConfiguration("agent_list").perform(context)
 
     agent_namespaces = yaml.safe_load(agent_list_str)
+
+    fleet_params = PathJoinSubstitution(
+        [
+            EnvironmentVariable("CONFIG_DIR"),
+            "fleet",
+            "coug_comms_params.yaml",
+        ]
+    )
+
+    poller_modem_frame = PythonExpression(
+        [
+            "'",
+            lead_agent,
+            "/modem_link' if '",
+            lead_agent,
+            "' != '' else 'base_station'",
+        ]
+    )
 
     dispatcher_modem_topics = {}
     poller_modem_topics = {}
@@ -67,20 +86,11 @@ def launch_setup(context, *args, **kwargs) -> list:
         if beacon_id is not None:
             beacon_ids[ns] = beacon_id
 
-    fleet_params = PathJoinSubstitution(
-        [
-            EnvironmentVariable("CONFIG_DIR"),
-            "fleet",
-            "coug_comms_params.yaml",
-        ]
-    )
-
     return [
         Node(
             package="coug_comms",
             executable="base_dispatcher",
             name="base_dispatcher_node",
-            namespace="base_station",
             parameters=[
                 fleet_params,
                 {
@@ -98,7 +108,6 @@ def launch_setup(context, *args, **kwargs) -> list:
             package="coug_comms",
             executable="base_status_poller",
             name="base_status_poller_node",
-            namespace="base_station",
             parameters=[
                 fleet_params,
                 {
@@ -108,6 +117,7 @@ def launch_setup(context, *args, **kwargs) -> list:
                     "lead_agent": lead_agent,
                     "enable_direct_comms": enable_direct_comms,
                     "enable_acoustic_comms": enable_acoustic_comms,
+                    "parameter_frame": poller_modem_frame,
                     **poller_modem_topics,
                 },
             ],
@@ -116,7 +126,6 @@ def launch_setup(context, *args, **kwargs) -> list:
             package="coug_comms",
             executable="base_status_extractor",
             name="base_status_extractor_node",
-            namespace="base_station",
             parameters=[
                 fleet_params,
                 {

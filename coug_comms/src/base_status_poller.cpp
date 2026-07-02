@@ -21,7 +21,9 @@
 
 #include "coug_comms/base_status_poller.hpp"
 
+#include <algorithm>
 #include <cmath>
+#include <geometry_msgs/msg/transform_stamped.hpp>
 #include <rclcpp_components/register_node_macro.hpp>
 
 #include "coug_comms/utils/protocol_enums.hpp"
@@ -55,6 +57,8 @@ BaseStatusPollerNode::BaseStatusPollerNode(const rclcpp::NodeOptions& options)
   modem_cmd_update_sub_ = create_subscription<seatrac_interfaces::msg::ModemCmdUpdate>(
       params_.modem_cmd_update_topic, rclcpp::SystemDefaultsQoS(),
       std::bind(&BaseStatusPollerNode::modemCmdUpdateCallback, this, std::placeholders::_1));
+
+  tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
 
   // --- ROS Diagnostics ---
   std::string prefix;
@@ -213,7 +217,11 @@ void BaseStatusPollerNode::modemRecCallback(
     status.position_depth = 0.0;
   }
 
+  status.header.frame_id =
+      params_.use_parameter_frame ? params_.parameter_frame : msg->header.frame_id;
+
   publishStatus(it->second, status, "ACOUSTIC");
+  publishPolledTransform(it->second, *msg);
 
   awaiting_response_ = false;
   scheduleNextPoll();
@@ -235,6 +243,29 @@ void BaseStatusPollerNode::failPendingRequest(const char* reason) {
   scheduleNextPoll();
 }
 
+void BaseStatusPollerNode::publishPolledTransform(const AgentEntry& agent,
+                                                  const seatrac_interfaces::msg::ModemRec& msg) {
+  if (!msg.includes_usbl || !msg.includes_range || !msg.includes_position) {
+    return;
+  }
+
+  const double azimuth = (msg.usbl_azimuth / 10.0) * M_PI / 180.0;     // [rad]
+  const double range = msg.range_dist / 10.0;                          // [m]
+  const double depth = (msg.position_depth - msg.depth_local) / 10.0;  // [m]
+  const double horizontal = std::sqrt(std::max(range * range - depth * depth, 0.0));
+
+  geometry_msgs::msg::TransformStamped tf;
+  tf.header.stamp = now();
+  tf.header.frame_id = params_.use_parameter_frame ? params_.parameter_frame : msg.header.frame_id;
+  tf.child_frame_id = agent.name + "/polled_modem_link";
+  tf.transform.translation.x = horizontal * std::cos(azimuth);
+  tf.transform.translation.y = horizontal * std::sin(azimuth);
+  tf.transform.translation.z = -depth;
+  tf.transform.rotation.w = 1.0;
+
+  tf_broadcaster_->sendTransform(tf);
+}
+
 void BaseStatusPollerNode::checkAgentPollStatus(diagnostic_updater::DiagnosticStatusWrapper& stat,
                                                 uint8_t beacon_id) {
   const AgentEntry& a = agents_.at(beacon_id);
@@ -248,9 +279,9 @@ void BaseStatusPollerNode::checkAgentPollStatus(diagnostic_updater::DiagnosticSt
   stat.add("Time Since Direct Heartbeat (s)", direct_heartbeat_age);
 
   if (a.responses == 0 || time_since > params_.diagnostic_timeout_sec) {
-    stat.summary(diagnostic_msgs::msg::DiagnosticStatus::WARN, "Agent is offline.");
+    stat.summary(diagnostic_msgs::msg::DiagnosticStatus::WARN, "Agent is unreachable.");
   } else {
-    stat.summary(diagnostic_msgs::msg::DiagnosticStatus::OK, "Agent is online.");
+    stat.summary(diagnostic_msgs::msg::DiagnosticStatus::OK, "Polled status acquired.");
   }
 }
 
