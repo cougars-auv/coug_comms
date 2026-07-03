@@ -66,13 +66,12 @@ def launch_setup(context, *args, **kwargs) -> list:
     config_dir = os.environ.get("CONFIG_DIR", "")
 
     def load_launch_params(path, top_key):
-        if not os.path.isfile(path):
+        try:
+            with open(path) as f:
+                config = yaml.safe_load(f)
+            return config[top_key]["coug_comms_base_launch"]["ros__parameters"]
+        except (KeyError, TypeError, OSError):
             return {}
-        with open(path) as f:
-            config = yaml.safe_load(f) or {}
-        return ((config.get(top_key) or {}).get("coug_comms_base_launch") or {}).get(
-            "ros__parameters"
-        ) or {}
 
     fleet_defaults = load_launch_params(
         os.path.join(config_dir, "fleet", "coug_comms_params.yaml"), "/**"
