@@ -48,25 +48,25 @@ class AuvStatusBundlerNode : public rclcpp::Node {
 
  protected:
   /**
-   * @brief Callback for incoming local odometry data.
+   * @brief Caches the latest local odometry message.
    * @param msg The latest odometry message.
    */
   void odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg);
 
   /**
-   * @brief Callback for incoming pressure/depth data.
+   * @brief Caches the latest pressure/depth odometry message.
    * @param msg The latest depth odometry message.
    */
   void depthCallback(const nav_msgs::msg::Odometry::SharedPtr msg);
 
   /**
-   * @brief Callback for incoming IMU orientation data.
+   * @brief Caches the latest IMU orientation message.
    * @param msg The latest IMU message.
    */
   void imuCallback(const sensor_msgs::msg::Imu::SharedPtr msg);
 
   /**
-   * @brief Periodic timer callback to bundle and publish agent status.
+   * @brief Bundles the cached sensors into an AgentStatus (base-frame corrected) and publishes it.
    */
   void timerCallback();
 

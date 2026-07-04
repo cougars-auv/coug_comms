@@ -172,13 +172,11 @@ bool BaseDispatcherNode::directServiceDispatch(
         }
         std_srvs::srv::Trigger::Response res;
         res.success = success;
+        res.message = label + (success ? " succeeded" : " failed");
+        service->send_response(*header, res);
         if (success) {
-          res.message = label + " succeeded";
-          service->send_response(*header, res);
           RCLCPP_INFO(get_logger(), "%s", res.message.c_str());
         } else {
-          res.message = label + " failed";
-          service->send_response(*header, res);
           RCLCPP_WARN(get_logger(), "%s", res.message.c_str());
         }
         recordServiceResult(beacon_id, label, "DIRECT", success);

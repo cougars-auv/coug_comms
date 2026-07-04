@@ -67,7 +67,7 @@ class BaseStatusExtractorNode : public rclcpp::Node {
   void registerAgent(const std::string& aname);
 
   /**
-   * @brief Callback for incoming AgentStatus messages.
+   * @brief Splits an AgentStatus into the agent's odometry, depth, and IMU topics.
    * @param aname The namespace of the agent.
    * @param msg The received status message.
    */

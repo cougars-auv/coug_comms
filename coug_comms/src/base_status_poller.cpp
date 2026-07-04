@@ -194,28 +194,16 @@ void BaseStatusPollerNode::modemRecCallback(
     return;
   }
 
+  // Driver units: decimeters for ranges/depths, decidegrees for angles
   status.includes_range = msg->includes_range;
-  if (msg->includes_range) {
-    status.range_dist = msg->range_dist / 10.0;
-  } else {
-    status.range_dist = 0.0;
-  }
+  status.range_dist = msg->includes_range ? msg->range_dist / 10.0 : 0.0;
 
   status.includes_usbl = msg->includes_usbl;
-  if (msg->includes_usbl) {
-    status.usbl_azimuth = (msg->usbl_azimuth / 10.0) * M_PI / 180.0;
-    status.usbl_elevation = (msg->usbl_elevation / 10.0) * M_PI / 180.0;
-  } else {
-    status.usbl_azimuth = 0.0;
-    status.usbl_elevation = 0.0;
-  }
+  status.usbl_azimuth = msg->includes_usbl ? (msg->usbl_azimuth / 10.0) * M_PI / 180.0 : 0.0;
+  status.usbl_elevation = msg->includes_usbl ? (msg->usbl_elevation / 10.0) * M_PI / 180.0 : 0.0;
 
   status.includes_position = msg->includes_position;
-  if (msg->includes_position) {
-    status.position_depth = msg->position_depth / 10.0;
-  } else {
-    status.position_depth = 0.0;
-  }
+  status.position_depth = msg->includes_position ? msg->position_depth / 10.0 : 0.0;
 
   status.header.frame_id =
       params_.use_parameter_frame ? params_.parameter_frame : msg->header.frame_id;

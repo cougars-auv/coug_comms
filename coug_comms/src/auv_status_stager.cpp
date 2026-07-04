@@ -21,8 +21,6 @@
 
 #include "coug_comms/auv_status_stager.hpp"
 
-#include <array>
-#include <cstdint>
 #include <rclcpp_components/register_node_macro.hpp>
 
 #include "coug_comms/utils/seatrac_enums.hpp"
@@ -67,9 +65,7 @@ void AuvStatusStagerNode::statusCallback(const coug_interfaces::msg::AgentStatus
   seatrac_interfaces::msg::ModemSend send;
   send.msg_id = CID_DAT_QUEUE_SET;
   send.dest_id = BEACON_ALL;
-  std::array<uint8_t, 30> buffer{};
-  send.packet_len = utils::encodeStatus(*msg, buffer.data());
-  std::copy(buffer.begin(), buffer.end(), send.packet_data.begin());
+  send.packet_len = utils::encodeStatus(*msg, send.packet_data.data());
   modem_send_pub_->publish(send);
 }
 
