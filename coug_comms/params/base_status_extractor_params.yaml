@@ -12,7 +12,7 @@ base_status_extractor_node:
       not_empty<>: []
   depth_topic:
     type: string
-    default_value: "base/odometry/depth"
+    default_value: "base/depth/odometry"
     validation:
       not_empty<>: []
   imu_topic:
