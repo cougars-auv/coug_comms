@@ -33,8 +33,6 @@ using utils::CID_DAT_QUEUE_SET;
 
 AuvStatusStagerNode::AuvStatusStagerNode(const rclcpp::NodeOptions& options)
     : Node("auv_status_stager_node", options), diagnostic_updater_(this) {
-  RCLCPP_INFO(get_logger(), "Starting AUV Status Stager Node...");
-
   param_listener_ =
       std::make_shared<auv_status_stager_node::ParamListener>(get_node_parameters_interface());
   params_ = param_listener_->get_params();
@@ -56,7 +54,7 @@ AuvStatusStagerNode::AuvStatusStagerNode(const rclcpp::NodeOptions& options)
     diagnostic_updater_.add(prefix + "Staging Status", this, &AuvStatusStagerNode::checkStatus);
   }
 
-  RCLCPP_INFO(get_logger(), "Startup complete! Waiting for status updates...");
+  RCLCPP_INFO(get_logger(), "Initialization complete.");
 }
 
 void AuvStatusStagerNode::statusCallback(const coug_interfaces::msg::AgentStatus::SharedPtr msg) {

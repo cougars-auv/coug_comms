@@ -33,8 +33,6 @@ using utils::MsgId;
 
 BaseDispatcherNode::BaseDispatcherNode(const rclcpp::NodeOptions& options)
     : Node("base_dispatcher_node", options), diagnostic_updater_(this) {
-  RCLCPP_INFO(get_logger(), "Starting Base Dispatcher Node...");
-
   param_listener_ =
       std::make_shared<base_dispatcher_node::ParamListener>(get_node_parameters_interface());
   params_ = param_listener_->get_params();
@@ -76,7 +74,7 @@ BaseDispatcherNode::BaseDispatcherNode(const rclcpp::NodeOptions& options)
     registerAgent(aname, static_cast<uint8_t>(raw_id), prefix);
   }
 
-  RCLCPP_INFO(get_logger(), "Startup complete! Waiting for service clients...");
+  RCLCPP_INFO(get_logger(), "Initialization complete.");
 }
 
 void BaseDispatcherNode::registerAgent(const std::string& aname, uint8_t beacon_id,

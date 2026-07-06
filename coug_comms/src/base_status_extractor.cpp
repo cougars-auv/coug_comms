@@ -27,8 +27,6 @@ namespace coug_comms {
 
 BaseStatusExtractorNode::BaseStatusExtractorNode(const rclcpp::NodeOptions& options)
     : Node("base_status_extractor_node", options) {
-  RCLCPP_INFO(get_logger(), "Starting Base Status Extractor Node...");
-
   param_listener_ =
       std::make_shared<base_status_extractor_node::ParamListener>(get_node_parameters_interface());
   params_ = param_listener_->get_params();
@@ -40,7 +38,7 @@ BaseStatusExtractorNode::BaseStatusExtractorNode(const rclcpp::NodeOptions& opti
     registerAgent(aname);
   }
 
-  RCLCPP_INFO(get_logger(), "Startup complete! Waiting for status updates...");
+  RCLCPP_INFO(get_logger(), "Initialization complete.");
 }
 
 void BaseStatusExtractorNode::registerAgent(const std::string& aname) {

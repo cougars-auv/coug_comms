@@ -39,8 +39,6 @@ using utils::MsgId;
 
 BaseStatusPollerNode::BaseStatusPollerNode(const rclcpp::NodeOptions& options)
     : Node("base_status_poller_node", options), diagnostic_updater_(this) {
-  RCLCPP_INFO(get_logger(), "Starting Base Status Poller Node...");
-
   param_listener_ =
       std::make_shared<base_status_poller_node::ParamListener>(get_node_parameters_interface());
   params_ = param_listener_->get_params();
@@ -83,7 +81,7 @@ BaseStatusPollerNode::BaseStatusPollerNode(const rclcpp::NodeOptions& options)
   tick_timer_ = create_wall_timer(std::chrono::duration<double>(params_.tick_period_sec),
                                   std::bind(&BaseStatusPollerNode::tickCallback, this));
 
-  RCLCPP_INFO(get_logger(), "Startup complete! Polling agents for status...");
+  RCLCPP_INFO(get_logger(), "Initialization complete.");
 }
 
 void BaseStatusPollerNode::registerAgent(const std::string& aname, uint8_t beacon_id,

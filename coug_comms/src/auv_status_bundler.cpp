@@ -28,8 +28,6 @@ namespace coug_comms {
 
 AuvStatusBundlerNode::AuvStatusBundlerNode(const rclcpp::NodeOptions& options)
     : Node("auv_status_bundler_node", options) {
-  RCLCPP_INFO(get_logger(), "Starting AUV Status Bundler Node...");
-
   param_listener_ =
       std::make_shared<auv_status_bundler_node::ParamListener>(get_node_parameters_interface());
   params_ = param_listener_->get_params();
@@ -56,7 +54,7 @@ AuvStatusBundlerNode::AuvStatusBundlerNode(const rclcpp::NodeOptions& options)
   timer_ = create_wall_timer(std::chrono::duration<double>(1.0 / params_.publish_rate_hz),
                              std::bind(&AuvStatusBundlerNode::timerCallback, this));
 
-  RCLCPP_INFO(get_logger(), "Startup complete! Waiting for sensor data...");
+  RCLCPP_INFO(get_logger(), "Initialization complete.");
 }
 
 void AuvStatusBundlerNode::odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg) {

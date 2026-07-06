@@ -29,8 +29,6 @@ using utils::MsgId;
 
 AuvReceiverNode::AuvReceiverNode(const rclcpp::NodeOptions& options)
     : Node("auv_receiver_node", options), diagnostic_updater_(this) {
-  RCLCPP_INFO(get_logger(), "Starting AUV Receiver Node...");
-
   param_listener_ =
       std::make_shared<auv_receiver_node::ParamListener>(get_node_parameters_interface());
   params_ = param_listener_->get_params();
@@ -59,7 +57,7 @@ AuvReceiverNode::AuvReceiverNode(const rclcpp::NodeOptions& options)
     diagnostic_updater_.add(cmd_task, this, &AuvReceiverNode::checkServiceStatus);
   }
 
-  RCLCPP_INFO(get_logger(), "Startup complete! Waiting for acoustic service clients...");
+  RCLCPP_INFO(get_logger(), "Initialization complete.");
 }
 
 void AuvReceiverNode::modemRecCallback(const seatrac_interfaces::msg::ModemRec::SharedPtr msg) {
@@ -90,7 +88,8 @@ void AuvReceiverNode::modemRecCallback(const seatrac_interfaces::msg::ModemRec::
       return;
   }
 
-  RCLCPP_INFO(get_logger(), "Received %s from beacon %d", utils::toString(id).c_str(), msg->src_id);
+  RCLCPP_INFO(get_logger(), "Received %s from beacon %d.", utils::toString(id).c_str(),
+              msg->src_id);
   callService(client, id);
 }
 
