@@ -32,7 +32,7 @@ using utils::BEACON_ALL;
 using utils::CID_DAT_QUEUE_SET;
 
 AuvStatusStagerNode::AuvStatusStagerNode(const rclcpp::NodeOptions& options)
-    : Node("auv_status_stager_node", options), diagnostic_updater_(this) {
+    : Node("auv_status_stager_node", options) {
   param_listener_ =
       std::make_shared<auv_status_stager_node::ParamListener>(get_node_parameters_interface());
   params_ = param_listener_->get_params();
@@ -43,16 +43,6 @@ AuvStatusStagerNode::AuvStatusStagerNode(const rclcpp::NodeOptions& options)
   status_sub_ = create_subscription<coug_interfaces::msg::AgentStatus>(
       params_.status_topic, rclcpp::SystemDefaultsQoS(),
       std::bind(&AuvStatusStagerNode::statusCallback, this, std::placeholders::_1));
-
-  // --- ROS Diagnostics ---
-  if (params_.publish_diagnostics) {
-    std::string ns = this->get_namespace();
-    std::string clean_ns = (ns == "/") ? "" : ns;
-    diagnostic_updater_.setHardwareID(clean_ns + "/auv_status_stager_node");
-
-    std::string prefix = clean_ns.empty() ? "" : "[" + clean_ns + "] ";
-    diagnostic_updater_.add(prefix + "Staging Status", this, &AuvStatusStagerNode::checkStatus);
-  }
 
   RCLCPP_INFO(get_logger(), "Initialization complete.");
 }
@@ -65,18 +55,6 @@ void AuvStatusStagerNode::statusCallback(const coug_interfaces::msg::AgentStatus
   send.dest_id = BEACON_ALL;
   send.packet_len = utils::encodeStatus(*msg, send.packet_data.data());
   modem_send_pub_->publish(send);
-}
-
-void AuvStatusStagerNode::checkStatus(diagnostic_updater::DiagnosticStatusWrapper& stat) {
-  double time_since =
-      (last_status_time_ > 0.0) ? (this->get_clock()->now().seconds() - last_status_time_) : -1.0;
-  stat.add("Time Since Last (s)", time_since);
-
-  if (time_since > params_.diagnostic_timeout_sec || last_status_time_ == 0.0) {
-    stat.summary(diagnostic_msgs::msg::DiagnosticStatus::ERROR, "No status to stage.");
-  } else {
-    stat.summary(diagnostic_msgs::msg::DiagnosticStatus::OK, "Status staged successfully.");
-  }
 }
 
 }  // namespace coug_comms

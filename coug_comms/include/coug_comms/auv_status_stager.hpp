@@ -21,7 +21,6 @@
 
 #pragma once
 
-#include <diagnostic_updater/diagnostic_updater.hpp>
 #include <memory>
 #include <rclcpp/rclcpp.hpp>
 #include <seatrac_interfaces/msg/modem_send.hpp>
@@ -50,16 +49,9 @@ class AuvStatusStagerNode : public rclcpp::Node {
    */
   void statusCallback(const coug_interfaces::msg::AgentStatus::SharedPtr msg);
 
-  /**
-   * @brief Diagnostic task reporting whether a status was staged recently.
-   * @param stat The diagnostic status wrapper.
-   */
-  void checkStatus(diagnostic_updater::DiagnosticStatusWrapper& stat);
-
   // --- ROS Interfaces ---
   rclcpp::Subscription<coug_interfaces::msg::AgentStatus>::SharedPtr status_sub_;
   rclcpp::Publisher<seatrac_interfaces::msg::ModemSend>::SharedPtr modem_send_pub_;
-  diagnostic_updater::Updater diagnostic_updater_;
 
   // --- Parameters ---
   std::shared_ptr<auv_status_stager_node::ParamListener> param_listener_;
