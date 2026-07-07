@@ -56,9 +56,6 @@ class AuvStatusStagerNode : public rclcpp::Node {
   // --- Parameters ---
   std::shared_ptr<auv_status_stager_node::ParamListener> param_listener_;
   auv_status_stager_node::Params params_;
-
-  // --- State ---
-  double last_status_time_{0.0};
 };
 
 }  // namespace coug_comms

@@ -48,8 +48,6 @@ AuvStatusStagerNode::AuvStatusStagerNode(const rclcpp::NodeOptions& options)
 }
 
 void AuvStatusStagerNode::statusCallback(const coug_interfaces::msg::AgentStatus::SharedPtr msg) {
-  last_status_time_ = this->get_clock()->now().seconds();
-
   seatrac_interfaces::msg::ModemSend send;
   send.msg_id = CID_DAT_QUEUE_SET;
   send.dest_id = BEACON_ALL;
