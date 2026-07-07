@@ -3,7 +3,7 @@
 <package format="3">
   <name>coug_comms</name>
   <version>0.0.0</version>
-  <description>Comms management for the CougUV</description>
+  <description>CoUGARs acoustic modem telemetry and comms.</description>
   <maintainer email="snelsond@byu.edu">snelsondurrant</maintainer>
   <license>Apache-2.0</license>
 
