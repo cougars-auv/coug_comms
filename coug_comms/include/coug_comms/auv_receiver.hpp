@@ -14,7 +14,7 @@
 
 /**
  * @file auv_receiver.hpp
- * @brief ROS 2 node for receiving base station services on the AUV.
+ * @brief ROS 2 node that runs base station service requests received over the modem.
  * @author Nelson Durrant
  * @date June 2026
  */
@@ -36,7 +36,7 @@ namespace coug_comms {
 
 /**
  * @class AuvReceiverNode
- * @brief ROS 2 node for receiving base station services on the AUV.
+ * @brief ROS 2 node that runs base station service requests received over the modem.
  */
 class AuvReceiverNode : public rclcpp::Node {
  public:
