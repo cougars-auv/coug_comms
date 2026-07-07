@@ -121,8 +121,7 @@ class BaseDispatcherNode : public rclcpp::Node {
                                std::shared_ptr<rmw_request_id_t> header);
 
   /**
-   * @brief Creates service servers, direct clients, a heartbeat subscription, and a diagnostic
-   * task.
+   * @brief Creates service servers, direct clients, heartbeat subscription, and diagnostic task.
    * @param name The agent's ROS namespace.
    * @param beacon_id The agent's acoustic beacon ID.
    * @param diag_prefix Namespace prefix for diagnostic task labels.

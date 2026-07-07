@@ -220,8 +220,7 @@ inline uint8_t encodeStatus(const coug_interfaces::msg::AgentStatus& status, uin
  * @param buf The received payload.
  * @param len The payload length.
  * @param status The status to populate (header is left untouched).
- * @return True if the payload is long enough and carries the RESP_STATUS
- * discriminator; false otherwise.
+ * @return True if the payload is long enough and carries the RESP_STATUS discriminator.
  */
 inline bool decodeStatus(const uint8_t* buf, uint8_t len,
                          coug_interfaces::msg::AgentStatus& status) {
