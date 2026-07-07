@@ -256,13 +256,13 @@ void BaseStatusPollerNode::checkAgentPollStatus(diagnostic_updater::DiagnosticSt
                                                 uint8_t beacon_id) {
   const AgentEntry& a = agents_.at(beacon_id);
 
-  double time_since = (a.responses > 0) ? (now() - a.last_response_time).seconds() : -1.0;
-  if (a.responses > 0) stat.add("Last Transport", a.last_transport);
-  stat.add("Time Since Last (s)", time_since);
-
   double direct_heartbeat_age =
       (a.last_direct_heartbeat_sec > 0.0) ? (now().seconds() - a.last_direct_heartbeat_sec) : -1.0;
   stat.add("Time Since Direct Heartbeat (s)", direct_heartbeat_age);
+
+  double time_since = (a.responses > 0) ? (now() - a.last_response_time).seconds() : -1.0;
+  if (a.responses > 0) stat.add("Last Transport", a.last_transport);
+  stat.add("Time Since Last (s)", time_since);
 
   if (a.responses == 0 || time_since > params_.diagnostic_timeout_sec) {
     stat.summary(diagnostic_msgs::msg::DiagnosticStatus::WARN, "Agent is unreachable.");
