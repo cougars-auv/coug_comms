@@ -14,7 +14,7 @@
 
 /**
  * @file protocol_enums.hpp
- * @brief Shared messaging protocol for radio and acoustic comms.
+ * @brief Messaging protocol for radio and acoustic comms.
  * @author Nelson Durrant
  * @date June 2026
  */

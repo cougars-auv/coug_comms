@@ -66,7 +66,7 @@ class AuvStatusBundlerNode : public rclcpp::Node {
   void imuCallback(const sensor_msgs::msg::Imu::SharedPtr msg);
 
   /**
-   * @brief Bundles the cached sensors into an AgentStatus (base-frame corrected) and publishes it.
+   * @brief Bundles the cached sensors into an AgentStatus and publishes it.
    */
   void timerCallback();
 
