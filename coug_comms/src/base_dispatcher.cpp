@@ -138,7 +138,7 @@ void BaseDispatcherNode::handleServiceRequest(
 
   std_srvs::srv::Trigger::Response res;
   res.success = false;
-  res.message = name + " failed: comms disabled";
+  res.message = name + " failed: comms disabled.";
   service->send_response(*header, res);
   RCLCPP_ERROR(get_logger(), "%s", res.message.c_str());
   recordServiceResult(beacon_id, name, "NONE", false);
@@ -170,7 +170,7 @@ bool BaseDispatcherNode::directServiceDispatch(
         }
         std_srvs::srv::Trigger::Response res;
         res.success = success;
-        res.message = label + (success ? " succeeded" : " failed");
+        res.message = label + (success ? " succeeded." : " failed.");
         service->send_response(*header, res);
         if (success) {
           RCLCPP_INFO(get_logger(), "%s", res.message.c_str());
@@ -195,7 +195,7 @@ void BaseDispatcherNode::acousticServiceDispatch(
 
   std_srvs::srv::Trigger::Response res;
   res.success = true;
-  res.message = utils::toString(cmd) + " queued (acomms)";
+  res.message = utils::toString(cmd) + " queued (acomms).";
   service->send_response(*header, res);
   RCLCPP_INFO(get_logger(), "%s", res.message.c_str());
 }
