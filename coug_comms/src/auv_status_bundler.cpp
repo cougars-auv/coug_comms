@@ -81,7 +81,7 @@ void AuvStatusBundlerNode::timerCallback() {
   status.odometry_covariance = last_odom_->pose.covariance;
 
   if (last_depth_) {
-    // TODO: Talk w Kalliyan -- which frame should everything be in?
+    // Transform into the base_link frame
     std::string depth_frame = last_depth_->child_frame_id;
 
     geometry_msgs::msg::TransformStamped depth_T_base_tf;
