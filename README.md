@@ -1,4 +1,4 @@
-# 🌊 CoUGARs Comms
+# 🌊 CoUGARs Acoustic Comms
 
 [![ROS 2 Build & Test](https://github.com/cougars-auv/coug_comms/actions/workflows/ros2_build_and_test.yml/badge.svg)](https://github.com/cougars-auv/coug_comms/actions/workflows/ros2_build_and_test.yml)
 [![Docker Build](https://github.com/cougars-auv/coug_comms/actions/workflows/docker_build.yml/badge.svg)](https://github.com/cougars-auv/coug_comms/actions/workflows/docker_build.yml)

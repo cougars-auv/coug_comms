@@ -3,7 +3,7 @@
 <package format="3">
   <name>coug_comms</name>
   <version>0.0.0</version>
-  <description>CoUGARs acoustic modem telemetry and comms.</description>
+  <description>Acoustic modem telemetry and comms.</description>
   <maintainer email="snelsond@byu.edu">snelsondurrant</maintainer>
   <license>Apache-2.0</license>
   <url type="repository">https://github.com/cougars-auv/coug_comms</url>
