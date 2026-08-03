@@ -48,7 +48,7 @@ class AuvStatusBundlerNode : public rclcpp::Node {
 
  protected:
   /**
-   * @brief Caches the latest local odometry message.
+   * @brief Caches the latest local odometry message and bundles a status from it.
    * @param msg The latest odometry message.
    */
   void odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg);
@@ -68,14 +68,13 @@ class AuvStatusBundlerNode : public rclcpp::Node {
   /**
    * @brief Bundles the cached sensors into an AgentStatus and publishes it.
    */
-  void timerCallback();
+  void publishStatus();
 
   // --- ROS Interfaces ---
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr depth_sub_;
   rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr imu_sub_;
   rclcpp::Publisher<coug_interfaces::msg::AgentStatus>::SharedPtr status_pub_;
-  rclcpp::TimerBase::SharedPtr timer_;
 
   std::unique_ptr<tf2_ros::Buffer> tf_buffer_;
   std::shared_ptr<tf2_ros::TransformListener> tf_listener_;

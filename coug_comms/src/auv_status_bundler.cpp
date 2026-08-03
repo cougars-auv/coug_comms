@@ -51,14 +51,12 @@ AuvStatusBundlerNode::AuvStatusBundlerNode(const rclcpp::NodeOptions& options)
   status_pub_ = create_publisher<coug_interfaces::msg::AgentStatus>(params_.status_topic,
                                                                     rclcpp::SystemDefaultsQoS());
 
-  timer_ = create_wall_timer(std::chrono::duration<double>(1.0 / params_.publish_rate_hz),
-                             std::bind(&AuvStatusBundlerNode::timerCallback, this));
-
   RCLCPP_INFO(get_logger(), "Initialization complete.");
 }
 
 void AuvStatusBundlerNode::odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg) {
   last_odom_ = msg;
+  publishStatus();
 }
 
 void AuvStatusBundlerNode::depthCallback(const nav_msgs::msg::Odometry::SharedPtr msg) {
@@ -69,11 +67,7 @@ void AuvStatusBundlerNode::imuCallback(const sensor_msgs::msg::Imu::SharedPtr ms
   last_imu_ = msg;
 }
 
-void AuvStatusBundlerNode::timerCallback() {
-  if (!last_odom_) {
-    return;
-  }
-
+void AuvStatusBundlerNode::publishStatus() {
   coug_interfaces::msg::AgentStatus status;
   status.header.stamp = now();
 
