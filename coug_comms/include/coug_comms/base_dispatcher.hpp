@@ -42,7 +42,14 @@ namespace coug_comms {
  * @brief ROS 2 node for relaying base station services to AUVs.
  */
 class BaseDispatcherNode : public rclcpp::Node {
- protected:
+ public:
+  /**
+   * @brief Constructs the node and sets up service relaying to AUVs.
+   * @param options The node options.
+   */
+  explicit BaseDispatcherNode(const rclcpp::NodeOptions& options);
+
+ private:
   /**
    * @struct ServiceSpec
    * @brief Service names and message ID for one relayable service type.
@@ -78,14 +85,6 @@ class BaseDispatcherNode : public rclcpp::Node {
     double last_direct_heartbeat_sec = 0.0;
   };
 
- public:
-  /**
-   * @brief Constructs the node and sets up service relaying to AUVs.
-   * @param options The node options.
-   */
-  explicit BaseDispatcherNode(const rclcpp::NodeOptions& options);
-
- protected:
   /**
    * @brief Routes the service to the direct link, falling back to acoustics.
    * @param cmd The message ID to send.

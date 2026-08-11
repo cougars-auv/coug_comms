@@ -39,7 +39,14 @@ namespace coug_comms {
  * @brief ROS 2 node for extracting AgentStatus into standard topics.
  */
 class BaseStatusExtractorNode : public rclcpp::Node {
- protected:
+ public:
+  /**
+   * @brief Constructs the node and sets up extraction subscriptions/publishers.
+   * @param options The node options.
+   */
+  explicit BaseStatusExtractorNode(const rclcpp::NodeOptions& options);
+
+ private:
   /**
    * @struct AgentEntry
    * @brief Per-agent subscriptions and publishers.
@@ -52,14 +59,6 @@ class BaseStatusExtractorNode : public rclcpp::Node {
     rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr imu_pub;
   };
 
- public:
-  /**
-   * @brief Constructs the node and sets up extraction subscriptions/publishers.
-   * @param options The node options.
-   */
-  explicit BaseStatusExtractorNode(const rclcpp::NodeOptions& options);
-
- protected:
   /**
    * @brief Creates status subscriptions and extraction publishers for one agent.
    * @param aname The agent's ROS namespace.

@@ -46,7 +46,7 @@ class AuvStatusBundlerNode : public rclcpp::Node {
    */
   explicit AuvStatusBundlerNode(const rclcpp::NodeOptions& options);
 
- protected:
+ private:
   /**
    * @brief Caches the latest local odometry message and bundles a status from it.
    * @param msg The latest odometry message.

@@ -46,7 +46,7 @@ class AuvReceiverNode : public rclcpp::Node {
    */
   explicit AuvReceiverNode(const rclcpp::NodeOptions& options);
 
- protected:
+ private:
   /**
    * @brief Dispatches an incoming service request to the appropriate client.
    * @param msg Incoming modem message.

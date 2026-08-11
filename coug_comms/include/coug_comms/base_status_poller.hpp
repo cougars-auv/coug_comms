@@ -44,7 +44,14 @@ namespace coug_comms {
  * @brief ROS 2 node for polling AUV statuses over the acoustic modem.
  */
 class BaseStatusPollerNode : public rclcpp::Node {
- protected:
+ public:
+  /**
+   * @brief Constructs the node and sets up status polling.
+   * @param options The node options.
+   */
+  explicit BaseStatusPollerNode(const rclcpp::NodeOptions& options);
+
+ private:
   /**
    * @struct AgentEntry
    * @brief Per-agent state: identity, status publisher, direct link, and poll statistics.
@@ -61,14 +68,6 @@ class BaseStatusPollerNode : public rclcpp::Node {
     double last_direct_heartbeat_sec = 0.0;
   };
 
- public:
-  /**
-   * @brief Constructs the node and sets up status polling.
-   * @param options The node options.
-   */
-  explicit BaseStatusPollerNode(const rclcpp::NodeOptions& options);
-
- protected:
   /**
    * @brief Creates a status publisher, direct-link subscription, and diagnostic task for one agent.
    * @param name The agent's ROS namespace.

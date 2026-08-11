@@ -42,7 +42,7 @@ class AuvStatusStagerNode : public rclcpp::Node {
    */
   explicit AuvStatusStagerNode(const rclcpp::NodeOptions& options);
 
- protected:
+ private:
   /**
    * @brief Encodes an incoming status and stages it in the modem data queue.
    * @param msg The latest agent status.
