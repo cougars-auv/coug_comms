@@ -37,6 +37,13 @@ using utils::CST_XCVR_RESP_TIMEOUT;
 using utils::MSG_REQX;
 using utils::MsgId;
 
+namespace {
+
+constexpr double kDecimetersToMeters = 0.1;
+constexpr double kSeatracToRad = M_PI / 1800.0;
+
+}  // namespace
+
 BaseStatusPollerNode::BaseStatusPollerNode(const rclcpp::NodeOptions& options)
     : Node("base_status_poller_node", options), diagnostic_updater_(this) {
   param_listener_ =
@@ -196,14 +203,14 @@ void BaseStatusPollerNode::modemRecCallback(
 
   // Driver units: decimeters for ranges/depths, decidegrees for angles
   status.includes_range = msg->includes_range;
-  status.range_dist = msg->includes_range ? msg->range_dist / 10.0 : 0.0;
+  status.range_dist = msg->includes_range ? msg->range_dist * kDecimetersToMeters : 0.0;
 
   status.includes_usbl = msg->includes_usbl;
-  status.usbl_azimuth = msg->includes_usbl ? (msg->usbl_azimuth / 10.0) * M_PI / 180.0 : 0.0;
-  status.usbl_elevation = msg->includes_usbl ? (msg->usbl_elevation / 10.0) * M_PI / 180.0 : 0.0;
+  status.usbl_azimuth = msg->includes_usbl ? msg->usbl_azimuth * kSeatracToRad : 0.0;
+  status.usbl_elevation = msg->includes_usbl ? msg->usbl_elevation * kSeatracToRad : 0.0;
 
   status.includes_position = msg->includes_position;
-  status.position_depth = msg->includes_position ? msg->position_depth / 10.0 : 0.0;
+  status.position_depth = msg->includes_position ? msg->position_depth * kDecimetersToMeters : 0.0;
 
   status.header.frame_id =
       params_.use_parameter_frame ? params_.parameter_frame : msg->header.frame_id;
@@ -237,9 +244,9 @@ void BaseStatusPollerNode::publishPolledTransform(const AgentEntry& agent,
     return;
   }
 
-  const double azimuth = (msg.usbl_azimuth / 10.0) * M_PI / 180.0;     // [rad]
-  const double range = msg.range_dist / 10.0;                          // [m]
-  const double depth = (msg.position_depth - msg.depth_local) / 10.0;  // [m]
+  const double azimuth = msg.usbl_azimuth * kSeatracToRad;                            // [rad]
+  const double range = msg.range_dist * kDecimetersToMeters;                          // [m]
+  const double depth = (msg.position_depth - msg.depth_local) * kDecimetersToMeters;  // [m]
   const double horizontal = std::sqrt(std::max(range * range - depth * depth, 0.0));
 
   geometry_msgs::msg::TransformStamped tf;
