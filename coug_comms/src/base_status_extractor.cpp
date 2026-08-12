@@ -71,23 +71,36 @@ void BaseStatusExtractorNode::statusCallback(
     return;
   }
 
+  it->second.odom_pub->publish(convertToOdom(aname, msg));
+  it->second.depth_pub->publish(convertToDepth(msg));
+  it->second.imu_pub->publish(convertToImu(msg));
+}
+
+nav_msgs::msg::Odometry BaseStatusExtractorNode::convertToOdom(
+    const std::string& aname, const coug_interfaces::msg::AgentStatus::SharedPtr msg) {
   nav_msgs::msg::Odometry odom_msg;
   odom_msg.header = msg->header;
   odom_msg.header.frame_id = "map";
   odom_msg.child_frame_id = aname + "/base_link";
   odom_msg.pose.pose = msg->local_odometry;
   odom_msg.pose.covariance = msg->odometry_covariance;
-  it->second.odom_pub->publish(odom_msg);
+  return odom_msg;
+}
 
+nav_msgs::msg::Odometry BaseStatusExtractorNode::convertToDepth(
+    const coug_interfaces::msg::AgentStatus::SharedPtr msg) {
   nav_msgs::msg::Odometry depth_msg;
   depth_msg.header = msg->header;
   depth_msg.pose.pose.position.z = msg->pressure_depth;
-  it->second.depth_pub->publish(depth_msg);
+  return depth_msg;
+}
 
+sensor_msgs::msg::Imu BaseStatusExtractorNode::convertToImu(
+    const coug_interfaces::msg::AgentStatus::SharedPtr msg) {
   sensor_msgs::msg::Imu imu_msg;
   imu_msg.header = msg->header;
   imu_msg.orientation = msg->imu_orientation;
-  it->second.imu_pub->publish(imu_msg);
+  return imu_msg;
 }
 
 }  // namespace coug_comms

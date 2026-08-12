@@ -73,6 +73,29 @@ class BaseStatusExtractorNode : public rclcpp::Node {
   void statusCallback(const std::string& aname,
                       const coug_interfaces::msg::AgentStatus::SharedPtr msg);
 
+  /**
+   * @brief Converts the status pose into map-frame odometry for the agent's base frame.
+   * @param aname The namespace of the agent.
+   * @param msg The received status message.
+   * @return The converted Odometry message.
+   */
+  nav_msgs::msg::Odometry convertToOdom(const std::string& aname,
+                                        const coug_interfaces::msg::AgentStatus::SharedPtr msg);
+
+  /**
+   * @brief Converts the status pressure depth into Z-only odometry.
+   * @param msg The received status message.
+   * @return The converted Odometry message; only the Z position is populated.
+   */
+  nav_msgs::msg::Odometry convertToDepth(const coug_interfaces::msg::AgentStatus::SharedPtr msg);
+
+  /**
+   * @brief Converts the status orientation into an IMU message.
+   * @param msg The received status message.
+   * @return The converted Imu message; only the orientation is populated.
+   */
+  sensor_msgs::msg::Imu convertToImu(const coug_interfaces::msg::AgentStatus::SharedPtr msg);
+
   // --- Parameters ---
   std::shared_ptr<base_status_extractor_node::ParamListener> param_listener_;
   base_status_extractor_node::Params params_;
