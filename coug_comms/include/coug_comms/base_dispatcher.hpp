@@ -86,6 +86,14 @@ class BaseDispatcherNode : public rclcpp::Node {
   };
 
   /**
+   * @brief Creates service servers, direct clients, heartbeat subscription, and diagnostic task.
+   * @param name The agent's ROS namespace.
+   * @param beacon_id The agent's acoustic beacon ID.
+   * @param diag_prefix Namespace prefix for diagnostic task labels.
+   */
+  void registerAgent(const std::string& name, uint8_t beacon_id, const std::string& diag_prefix);
+
+  /**
    * @brief Routes the service to the direct link, falling back to acoustics.
    * @param cmd The message ID to send.
    * @param beacon_id The target beacon ID.
@@ -118,14 +126,6 @@ class BaseDispatcherNode : public rclcpp::Node {
   void acousticServiceDispatch(utils::MsgId cmd, uint8_t beacon_id,
                                rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr service,
                                std::shared_ptr<rmw_request_id_t> header);
-
-  /**
-   * @brief Creates service servers, direct clients, heartbeat subscription, and diagnostic task.
-   * @param name The agent's ROS namespace.
-   * @param beacon_id The agent's acoustic beacon ID.
-   * @param diag_prefix Namespace prefix for diagnostic task labels.
-   */
-  void registerAgent(const std::string& name, uint8_t beacon_id, const std::string& diag_prefix);
 
   /**
    * @brief Records a service outcome in an agent's rolling history, trimming to the last few.
