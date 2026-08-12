@@ -82,7 +82,7 @@ class BaseStatusPollerNode : public rclcpp::Node {
   void tickCallback();
 
   /**
-   * @brief Polls the next agent (direct link first, acoustics otherwise) if ready.
+   * @brief Polls the next agent acoustically, skipping agents whose direct link is live.
    */
   void pollNextIfReady();
 

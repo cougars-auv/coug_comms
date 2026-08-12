@@ -54,9 +54,9 @@ class AuvReceiverNode : public rclcpp::Node {
   void modemRecCallback(const seatrac_interfaces::msg::ModemRec::SharedPtr msg);
 
   /**
-   * @brief Calls a Trigger service and logs the outcome.
+   * @brief Calls a Trigger service, logging and recording the outcome.
    * @param client The service client to call.
-   * @param cmd The service message ID (for logging).
+   * @param cmd The service message ID (names the service in logs and history).
    */
   void callService(rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr client, utils::MsgId cmd);
 
@@ -92,7 +92,7 @@ class AuvReceiverNode : public rclcpp::Node {
   // --- State ---
   /**
    * @struct ServiceResult
-   * @brief A single relayed service and whether its call succeeded.
+   * @brief A single received service, the transport it arrived on, and whether the call succeeded.
    */
   struct ServiceResult {
     std::string service;

@@ -86,7 +86,7 @@ inline constexpr double kMetersScale = 100.0;
 
 /**
  * @brief Quantizes a distance in meters to a 1 cm signed 16-bit fixed point.
- * @param meters The distance in meters (clamped to +/- 327.67 m).
+ * @param meters The distance in meters (clamped to [-327.68, 327.67] m).
  * @return The quantized value.
  */
 inline int16_t encodeMeters(double meters) {
