@@ -15,7 +15,7 @@
 /**
  * @file status_codec.hpp
  * @brief Compact acoustic encoding of coug_interfaces/AgentStatus.
- * @author Nelson Durrant (w Opus 4.8)
+ * @author Nelson Durrant (w Claude Opus 4.8)
  * @date June 2026
  *
  * AgentStatus is too large for a Seatrac DAT packet (max 30 bytes), so only the
