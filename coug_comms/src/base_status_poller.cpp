@@ -205,8 +205,9 @@ void BaseStatusPollerNode::modemRecCallback(
   status.includes_range = msg->includes_range;
   status.range_dist = msg->includes_range ? msg->range_dist * kDecimetersToMeters : 0.0;
 
+  // Convert FRD -> FLU
   status.includes_usbl = msg->includes_usbl;
-  status.usbl_azimuth = msg->includes_usbl ? msg->usbl_azimuth * kSeatracToRad : 0.0;
+  status.usbl_azimuth = msg->includes_usbl ? -msg->usbl_azimuth * kSeatracToRad : 0.0;
   status.usbl_elevation = msg->includes_usbl ? msg->usbl_elevation * kSeatracToRad : 0.0;
 
   status.includes_position = msg->includes_position;
@@ -244,7 +245,8 @@ void BaseStatusPollerNode::publishPolledTransform(const AgentEntry& agent,
     return;
   }
 
-  const double azimuth = msg.usbl_azimuth * kSeatracToRad;                            // [rad]
+  // Convert FRD -> FLU
+  const double azimuth = -msg.usbl_azimuth * kSeatracToRad;                           // [rad]
   const double range = msg.range_dist * kDecimetersToMeters;                          // [m]
   const double depth = (msg.position_depth - msg.depth_local) * kDecimetersToMeters;  // [m]
   const double horizontal = std::sqrt(std::max(range * range - depth * depth, 0.0));
