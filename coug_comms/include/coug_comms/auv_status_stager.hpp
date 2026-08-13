@@ -45,7 +45,7 @@ class AuvStatusStagerNode : public rclcpp::Node {
  private:
   /**
    * @brief Encodes an incoming status and stages it in the modem data queue.
-   * @param msg The latest agent status.
+   * @param msg The incoming AgentStatus message.
    */
   void statusCallback(const coug_interfaces::msg::AgentStatus::SharedPtr msg);
 

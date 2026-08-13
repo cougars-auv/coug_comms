@@ -67,31 +67,31 @@ class BaseStatusExtractorNode : public rclcpp::Node {
 
   /**
    * @brief Splits an AgentStatus into the agent's odometry, depth, and IMU topics.
-   * @param aname The namespace of the agent.
-   * @param msg The received status message.
+   * @param aname The agent's ROS namespace.
+   * @param msg The incoming AgentStatus message.
    */
   void statusCallback(const std::string& aname,
                       const coug_interfaces::msg::AgentStatus::SharedPtr msg);
 
   /**
    * @brief Converts the status pose into map-frame odometry for the agent's base frame.
-   * @param aname The namespace of the agent.
-   * @param msg The received status message.
-   * @return The converted Odometry message.
+   * @param aname The agent's ROS namespace.
+   * @param msg The incoming AgentStatus message.
+   * @return The converted Odometry message; twist fields are left zeroed.
    */
   nav_msgs::msg::Odometry convertToOdom(const std::string& aname,
                                         const coug_interfaces::msg::AgentStatus::SharedPtr msg);
 
   /**
    * @brief Converts the status pressure depth into Z-only odometry.
-   * @param msg The received status message.
+   * @param msg The incoming AgentStatus message.
    * @return The converted Odometry message; only the Z position is populated.
    */
   nav_msgs::msg::Odometry convertToDepth(const coug_interfaces::msg::AgentStatus::SharedPtr msg);
 
   /**
    * @brief Converts the status orientation into an IMU message.
-   * @param msg The received status message.
+   * @param msg The incoming AgentStatus message.
    * @return The converted Imu message; only the orientation is populated.
    */
   sensor_msgs::msg::Imu convertToImu(const coug_interfaces::msg::AgentStatus::SharedPtr msg);

@@ -108,13 +108,13 @@ class BaseStatusPollerNode : public rclcpp::Node {
 
   /**
    * @brief Decodes and republishes an acoustic status response from the polled agent.
-   * @param msg The incoming modem message.
+   * @param msg The incoming ModemRec message.
    */
   void modemRecCallback(const seatrac_interfaces::msg::ModemRec::SharedPtr msg);
 
   /**
    * @brief Abandons the pending request early if the modem reports a response timeout.
-   * @param msg The incoming modem command status update.
+   * @param msg The incoming ModemCmdUpdate message.
    */
   void modemCmdUpdateCallback(const seatrac_interfaces::msg::ModemCmdUpdate::SharedPtr msg);
 
@@ -127,7 +127,7 @@ class BaseStatusPollerNode : public rclcpp::Node {
   /**
    * @brief Broadcasts a transform to a "polled" frame at the agent's acoustic fix.
    * @param agent The agent the fix belongs to.
-   * @param msg The incoming modem message carrying the acoustic fix.
+   * @param msg The incoming ModemRec message carrying the acoustic fix.
    */
   void publishPolledTransform(const AgentEntry& agent,
                               const seatrac_interfaces::msg::ModemRec& msg);

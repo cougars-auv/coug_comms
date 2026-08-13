@@ -12,11 +12,11 @@ base_status_extractor_node:
       not_empty<>: []
   depth_topic:
     type: string
-    default_value: "base/depth/odometry"
+    default_value: "base/seatrac/depth/odometry"
     validation:
       not_empty<>: []
   imu_topic:
     type: string
-    default_value: "base/imu/data"
+    default_value: "base/seatrac/imu/data"
     validation:
       not_empty<>: []

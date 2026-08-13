@@ -49,7 +49,7 @@ class AuvReceiverNode : public rclcpp::Node {
  private:
   /**
    * @brief Dispatches an incoming service request to the appropriate client.
-   * @param msg Incoming modem message.
+   * @param msg The incoming ModemRec message.
    */
   void modemRecCallback(const seatrac_interfaces::msg::ModemRec::SharedPtr msg);
 
