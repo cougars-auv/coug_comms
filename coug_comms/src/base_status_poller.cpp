@@ -195,7 +195,7 @@ void BaseStatusPollerNode::modemRecCallback(
   }
 
   coug_interfaces::msg::AgentStatus status;
-  if (!utils::decodeStatus(msg->packet_data.data(), msg->packet_len, status)) {
+  if (!utils::decodeStatus(msg->packet_data, msg->packet_len, status)) {
     failPendingRequest("undecodable status payload");
     pollNextIfReady();
     return;

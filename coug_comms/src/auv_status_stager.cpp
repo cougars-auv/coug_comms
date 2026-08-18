@@ -51,7 +51,7 @@ void AuvStatusStagerNode::statusCallback(const coug_interfaces::msg::AgentStatus
   seatrac_interfaces::msg::ModemSend send;
   send.msg_id = CID_DAT_QUEUE_SET;
   send.dest_id = BEACON_ALL;
-  send.packet_len = utils::encodeStatus(*msg, send.packet_data.data());
+  send.packet_len = utils::encodeStatus(*msg, send.packet_data);
   modem_send_pub_->publish(send);
 }
 

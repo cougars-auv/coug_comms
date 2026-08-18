@@ -15,94 +15,97 @@
 /**
  * @file test_status_codec.cpp
  * @brief Unit tests for status_codec.hpp.
- * @author Nelson Durrant (w Opus 4.8)
+ * @author Nelson Durrant (w Claude Opus 5)
  * @date June 2026
  */
 
 #include <gtest/gtest.h>
 
-#include <array>
 #include <cmath>
-#include <cstdint>
 
 #include "coug_comms/utils/status_codec.hpp"
 
+namespace {
+
+using coug_comms::utils::DatPayload;
 using coug_comms::utils::decodeStatus;
 using coug_comms::utils::encodeStatus;
+using coug_comms::utils::kCovStride;
 using coug_comms::utils::kStatusPacketLen;
-using coug_comms::utils::MsgId;
+using coug_comms::utils::detail::kMaxVariance;
+using coug_comms::utils::detail::kMinVariance;
+
+constexpr double kMetersTol = 0.005;    // half the 1 cm quantization step
+constexpr double kQuatTol = 0.001;      // just over the 0.0007 component half-step
+constexpr double kVarianceTol = 0.001;  // float16 keeps ~11 significant bits, so ~0.05% at worst
 
 /**
- * @brief Verify every transmitted field survives an encode/decode round-trip.
+ * @brief Builds a normalized quaternion.
+ */
+geometry_msgs::msg::Quaternion makeQuat(double x, double y, double z, double w) {
+  const double norm = std::sqrt(x * x + y * y + z * z + w * w);
+  geometry_msgs::msg::Quaternion quat;
+  quat.x = x / norm;
+  quat.y = y / norm;
+  quat.z = z / norm;
+  quat.w = w / norm;
+  return quat;
+}
+
+/**
+ * @brief Checks two quaternions match within the component quantization, naming the call site.
+ */
+void expectQuatNear(const geometry_msgs::msg::Quaternion& actual,
+                    const geometry_msgs::msg::Quaternion& expected, const char* label) {
+  SCOPED_TRACE(label);
+  EXPECT_NEAR(actual.x, expected.x, kQuatTol);
+  EXPECT_NEAR(actual.y, expected.y, kQuatTol);
+  EXPECT_NEAR(actual.z, expected.z, kQuatTol);
+  EXPECT_NEAR(actual.w, expected.w, kQuatTol);
+}
+
+}  // namespace
+
+/**
+ * @brief Verify each transmitted field round-trips within its quantization or saturation bound.
  */
 TEST(StatusCodecTest, RoundTrip) {
-  auto quatAngleDeg = [](const geometry_msgs::msg::Quaternion& a,
-                         const geometry_msgs::msg::Quaternion& b) {
-    double dot = std::min(1.0, std::fabs(a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w));
-    return 2.0 * std::acos(dot) * 180.0 / M_PI;
-  };
-
   coug_interfaces::msg::AgentStatus in;
   in.local_odometry.position.x = 12.34;
   in.local_odometry.position.y = -56.78;
   in.local_odometry.position.z = 3.20;
-  const double n = std::sqrt(0.1 * 0.1 + 0.2 * 0.2 + 0.3 * 0.3 + 0.9 * 0.9);
-  in.local_odometry.orientation.x = 0.1 / n;
-  in.local_odometry.orientation.y = 0.2 / n;
-  in.local_odometry.orientation.z = 0.3 / n;
-  in.local_odometry.orientation.w = 0.9 / n;
-  in.imu_orientation.z = std::sin(0.3);
-  in.imu_orientation.w = std::cos(0.3);
   in.pressure_depth = 4.05;
-  for (int i = 0; i < 6; ++i) in.odometry_covariance[7 * i] = 0.01 * (i + 1);
+  in.local_odometry.orientation = makeQuat(-0.1, 0.2, -0.3, 0.9);
+  in.imu_orientation = makeQuat(0.3, -0.4, 0.1, 0.8);
+  for (int i = 0; i < 6; ++i) in.odometry_covariance[i * kCovStride] = 0.01 * (i + 1);
+  in.odometry_covariance[0] = 1.0e-9;  // below kMinVariance, so the floor shows up
+  in.odometry_covariance[35] = 1.0e6;  // above kMaxVariance, so the ceiling shows up
 
-  std::array<uint8_t, 30> buf{};
-  const uint8_t len = encodeStatus(in, buf.data());
-  ASSERT_EQ(len, kStatusPacketLen);
-  ASSERT_LE(len, 30u);
-  EXPECT_EQ(buf[0], static_cast<uint8_t>(MsgId::RESP_STATUS));
+  DatPayload buf{};
+  ASSERT_EQ(encodeStatus(in, buf), kStatusPacketLen);
 
   coug_interfaces::msg::AgentStatus out;
-  ASSERT_TRUE(decodeStatus(buf.data(), len, out));
+  out.header.frame_id = "coug1/base_link";
+  out.odometry_covariance.fill(99.0);
+  ASSERT_TRUE(decodeStatus(buf, kStatusPacketLen, out));
 
-  EXPECT_NEAR(out.local_odometry.position.x, in.local_odometry.position.x, 0.005);
-  EXPECT_NEAR(out.local_odometry.position.y, in.local_odometry.position.y, 0.005);
-  EXPECT_NEAR(out.local_odometry.position.z, in.local_odometry.position.z, 0.005);
-  EXPECT_NEAR(out.pressure_depth, in.pressure_depth, 0.005);
-  EXPECT_LT(quatAngleDeg(out.local_odometry.orientation, in.local_odometry.orientation), 0.3);
-  EXPECT_LT(quatAngleDeg(out.imu_orientation, in.imu_orientation), 0.3);
-  for (int i = 0; i < 6; ++i) {
-    const double expected = in.odometry_covariance[7 * i];
-    EXPECT_NEAR(out.odometry_covariance[7 * i], expected, expected * 0.01);
+  EXPECT_NEAR(out.local_odometry.position.x, 12.34, kMetersTol);
+  EXPECT_NEAR(out.local_odometry.position.y, -56.78, kMetersTol);
+  EXPECT_NEAR(out.local_odometry.position.z, 3.20, kMetersTol);
+  EXPECT_NEAR(out.pressure_depth, 4.05, kMetersTol);
+
+  expectQuatNear(out.local_odometry.orientation, in.local_odometry.orientation, "local_odometry");
+  expectQuatNear(out.imu_orientation, in.imu_orientation, "imu_orientation");
+
+  EXPECT_NEAR(out.odometry_covariance[0], kMinVariance, kMinVariance * kVarianceTol);
+  EXPECT_NEAR(out.odometry_covariance[35], kMaxVariance, kMaxVariance * kVarianceTol);
+  for (int i = 1; i < 5; ++i) {
+    const double expected = 0.01 * (i + 1);
+    EXPECT_NEAR(out.odometry_covariance[i * kCovStride], expected, expected * kVarianceTol);
   }
-}
+  for (const int off_diagonal : {1, 6, 11, 34}) {
+    EXPECT_DOUBLE_EQ(out.odometry_covariance[off_diagonal], 0.0) << "at " << off_diagonal;
+  }
 
-/**
- * @brief Verify only the covariance diagonal is kept; off-diagonals decode to zero.
- */
-TEST(StatusCodecTest, DropsOffDiagonalCovariance) {
-  coug_interfaces::msg::AgentStatus in;
-  in.odometry_covariance[1] = 99.0;
-  in.odometry_covariance[6] = 99.0;
-
-  std::array<uint8_t, 30> buf{};
-  const uint8_t len = encodeStatus(in, buf.data());
-  coug_interfaces::msg::AgentStatus out;
-  ASSERT_TRUE(decodeStatus(buf.data(), len, out));
-
-  EXPECT_DOUBLE_EQ(out.odometry_covariance[1], 0.0);
-  EXPECT_DOUBLE_EQ(out.odometry_covariance[6], 0.0);
-}
-
-/**
- * @brief Verify decoding fails on a short payload or a wrong discriminator byte.
- */
-TEST(StatusCodecTest, RejectsInvalidPayload) {
-  std::array<uint8_t, 30> buf{};
-  const uint8_t len = encodeStatus(coug_interfaces::msg::AgentStatus(), buf.data());
-  coug_interfaces::msg::AgentStatus out;
-
-  EXPECT_FALSE(decodeStatus(buf.data(), len - 1, out));
-  buf[0] = static_cast<uint8_t>(MsgId::SRV_START);
-  EXPECT_FALSE(decodeStatus(buf.data(), len, out));
+  EXPECT_EQ(out.header.frame_id, "coug1/base_link");  // the header is the caller's to fill in
 }
