@@ -31,13 +31,13 @@ using coug_comms::utils::DatPayload;
 using coug_comms::utils::decodeStatus;
 using coug_comms::utils::encodeStatus;
 using coug_comms::utils::kCovStride;
+using coug_comms::utils::kMaxVariance;
+using coug_comms::utils::kMinVariance;
 using coug_comms::utils::kStatusPacketLen;
-using coug_comms::utils::detail::kMaxVariance;
-using coug_comms::utils::detail::kMinVariance;
 
-constexpr double kMetersTol = 0.005;    // half the 1 cm quantization step
-constexpr double kQuatTol = 0.001;      // just over the 0.0007 component half-step
-constexpr double kVarianceTol = 0.001;  // float16 keeps ~11 significant bits, so ~0.05% at worst
+constexpr double kMetersTol = 0.005;    // exactly half the 1 cm quantization step
+constexpr double kQuatTol = 0.0025;     // the rebuilt component stacks all three 0.0007 half-steps
+constexpr double kVarianceTol = 0.001;  // 2x margin on float16's ~0.05% worst-case relative error
 
 /**
  * @brief Builds a normalized quaternion.
