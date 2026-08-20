@@ -83,11 +83,11 @@ void AuvStatusBundlerNode::publishStatus() {
       depth_T_base_tf =
           tf_buffer_->lookupTransform(depth_frame, params_.base_frame, tf2::TimePointZero);
 
-      geometry_msgs::msg::Pose p_base_in_depth;
-      p_base_in_depth.position.x = depth_T_base_tf.transform.translation.x;
-      p_base_in_depth.position.y = depth_T_base_tf.transform.translation.y;
-      p_base_in_depth.position.z = depth_T_base_tf.transform.translation.z;
-      p_base_in_depth.orientation = depth_T_base_tf.transform.rotation;
+      geometry_msgs::msg::Pose depth_T_base;
+      depth_T_base.position.x = depth_T_base_tf.transform.translation.x;
+      depth_T_base.position.y = depth_T_base_tf.transform.translation.y;
+      depth_T_base.position.z = depth_T_base_tf.transform.translation.z;
+      depth_T_base.orientation = depth_T_base_tf.transform.rotation;
 
       geometry_msgs::msg::TransformStamped ref_T_depth_tf;
       ref_T_depth_tf.header.frame_id = last_depth_->header.frame_id;
@@ -95,11 +95,18 @@ void AuvStatusBundlerNode::publishStatus() {
       ref_T_depth_tf.transform.translation.x = last_depth_->pose.pose.position.x;
       ref_T_depth_tf.transform.translation.y = last_depth_->pose.pose.position.y;
       ref_T_depth_tf.transform.translation.z = last_depth_->pose.pose.position.z;
-      ref_T_depth_tf.transform.rotation = last_depth_->pose.pose.orientation;
 
-      geometry_msgs::msg::Pose p_base_in_ref;
-      tf2::doTransform(p_base_in_depth, p_base_in_ref, ref_T_depth_tf);
-      status.pressure_depth = p_base_in_ref.position.z;
+      tf2::Quaternion ref_R_base, depth_R_base;
+      tf2::fromMsg(last_odom_->pose.pose.orientation, ref_R_base);
+      tf2::fromMsg(depth_T_base_tf.transform.rotation, depth_R_base);
+
+      tf2::Quaternion ref_R_depth = ref_R_base * depth_R_base.inverse();
+      ref_R_depth.normalize();
+      ref_T_depth_tf.transform.rotation = tf2::toMsg(ref_R_depth);
+
+      geometry_msgs::msg::Pose ref_T_base;
+      tf2::doTransform(depth_T_base, ref_T_base, ref_T_depth_tf);
+      status.pressure_depth = ref_T_base.position.z;
     } catch (const tf2::TransformException& ex) {
       RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 1000, "Could not transform %s to %s: %s",
                            depth_frame.c_str(), params_.base_frame.c_str(), ex.what());
@@ -118,13 +125,13 @@ void AuvStatusBundlerNode::publishStatus() {
       imu_T_base_tf =
           tf_buffer_->lookupTransform(imu_frame, params_.base_frame, tf2::TimePointZero);
 
-      tf2::Quaternion q_ref_imu, q_imu_base;
-      tf2::fromMsg(last_imu_->orientation, q_ref_imu);
-      tf2::fromMsg(imu_T_base_tf.transform.rotation, q_imu_base);
+      tf2::Quaternion ref_R_imu, imu_R_base;
+      tf2::fromMsg(last_imu_->orientation, ref_R_imu);
+      tf2::fromMsg(imu_T_base_tf.transform.rotation, imu_R_base);
 
-      tf2::Quaternion q_ref_base = q_ref_imu * q_imu_base;
-      q_ref_base.normalize();
-      status.imu_orientation = tf2::toMsg(q_ref_base);
+      tf2::Quaternion ref_R_base = ref_R_imu * imu_R_base;
+      ref_R_base.normalize();
+      status.imu_orientation = tf2::toMsg(ref_R_base);
     } catch (const tf2::TransformException& ex) {
       RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 1000, "Could not transform %s to %s: %s",
                            imu_frame.c_str(), params_.base_frame.c_str(), ex.what());
