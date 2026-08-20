@@ -16,7 +16,7 @@
  * @file seatrac_enums.hpp
  * @brief Shared enums for the Seatrac X150 driver.
  * @author Clayton Smith
- * @date Feb 2024
+ * @date February 2024
  */
 
 #pragma once
