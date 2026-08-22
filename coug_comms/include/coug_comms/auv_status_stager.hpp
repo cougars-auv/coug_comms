@@ -28,6 +28,7 @@ class AuvStatusStagerNode : public rclcpp::Node {
   explicit AuvStatusStagerNode(const rclcpp::NodeOptions& options);
 
  private:
+  // --- Callbacks ---
   void statusCallback(const coug_interfaces::msg::AgentStatus::SharedPtr msg);
 
   // --- ROS Interfaces ---

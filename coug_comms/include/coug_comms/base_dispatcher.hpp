@@ -58,6 +58,7 @@ class BaseDispatcherNode : public rclcpp::Node {
     double last_direct_heartbeat_sec = 0.0;
   };
 
+  // --- Helpers ---
   void registerAgent(const std::string& name, uint8_t beacon_id, const std::string& diag_prefix);
 
   void handleServiceRequest(utils::MsgId cmd, uint8_t beacon_id,
@@ -75,6 +76,7 @@ class BaseDispatcherNode : public rclcpp::Node {
   void recordServiceResult(uint8_t beacon_id, const std::string& service,
                            const std::string& transport, bool succeeded);
 
+  // --- Diagnostics ---
   void checkAgentServiceStatus(diagnostic_updater::DiagnosticStatusWrapper& stat,
                                uint8_t beacon_id);
 

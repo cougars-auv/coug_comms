@@ -49,9 +49,15 @@ class BaseStatusPollerNode : public rclcpp::Node {
     double last_direct_heartbeat_sec = 0.0;
   };
 
-  void registerAgent(const std::string& name, uint8_t beacon_id, const std::string& diag_prefix);
-
+  // --- Callbacks ---
   void tickCallback();
+
+  void modemRecCallback(const seatrac_interfaces::msg::ModemRec::SharedPtr msg);
+
+  void modemCmdUpdateCallback(const seatrac_interfaces::msg::ModemCmdUpdate::SharedPtr msg);
+
+  // --- Helpers ---
+  void registerAgent(const std::string& name, uint8_t beacon_id, const std::string& diag_prefix);
 
   void pollNextIfReady();
 
@@ -62,15 +68,12 @@ class BaseStatusPollerNode : public rclcpp::Node {
   void publishStatus(AgentEntry& agent, coug_interfaces::msg::AgentStatus status,
                      const std::string& transport);
 
-  void modemRecCallback(const seatrac_interfaces::msg::ModemRec::SharedPtr msg);
-
-  void modemCmdUpdateCallback(const seatrac_interfaces::msg::ModemCmdUpdate::SharedPtr msg);
-
   void failPendingRequest(const char* reason);
 
   void publishPolledTransform(const AgentEntry& agent,
                               const seatrac_interfaces::msg::ModemRec& msg);
 
+  // --- Diagnostics ---
   void checkAgentPollStatus(diagnostic_updater::DiagnosticStatusWrapper& stat, uint8_t beacon_id);
 
   // --- ROS Interfaces ---

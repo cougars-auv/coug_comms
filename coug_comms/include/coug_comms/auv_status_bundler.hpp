@@ -32,12 +32,14 @@ class AuvStatusBundlerNode : public rclcpp::Node {
   explicit AuvStatusBundlerNode(const rclcpp::NodeOptions& options);
 
  private:
+  // --- Callbacks ---
   void odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg);
 
   void depthCallback(const nav_msgs::msg::Odometry::SharedPtr msg);
 
   void imuCallback(const sensor_msgs::msg::Imu::SharedPtr msg);
 
+  // --- Helpers ---
   void publishStatus();
 
   // --- ROS Interfaces ---

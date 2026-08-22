@@ -34,6 +34,18 @@ BaseStatusExtractorNode::BaseStatusExtractorNode(const rclcpp::NodeOptions& opti
   RCLCPP_INFO(get_logger(), "Initialization complete.");
 }
 
+void BaseStatusExtractorNode::statusCallback(
+    const std::string& aname, const coug_interfaces::msg::AgentStatus::SharedPtr msg) {
+  auto it = agents_.find(aname);
+  if (it == agents_.end()) {
+    return;
+  }
+
+  it->second.odom_pub->publish(convertToOdom(aname, msg));
+  it->second.depth_pub->publish(convertToDepth(msg));
+  it->second.imu_pub->publish(convertToImu(msg));
+}
+
 void BaseStatusExtractorNode::registerAgent(const std::string& aname) {
   AgentEntry a;
   a.name = aname;
@@ -55,18 +67,6 @@ void BaseStatusExtractorNode::registerAgent(const std::string& aname) {
 
   agents_.emplace(aname, std::move(a));
   RCLCPP_INFO(get_logger(), "Registered extractor for agent '%s'.", aname.c_str());
-}
-
-void BaseStatusExtractorNode::statusCallback(
-    const std::string& aname, const coug_interfaces::msg::AgentStatus::SharedPtr msg) {
-  auto it = agents_.find(aname);
-  if (it == agents_.end()) {
-    return;
-  }
-
-  it->second.odom_pub->publish(convertToOdom(aname, msg));
-  it->second.depth_pub->publish(convertToDepth(msg));
-  it->second.imu_pub->publish(convertToImu(msg));
 }
 
 nav_msgs::msg::Odometry BaseStatusExtractorNode::convertToOdom(

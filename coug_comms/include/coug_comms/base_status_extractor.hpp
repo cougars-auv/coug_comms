@@ -40,10 +40,12 @@ class BaseStatusExtractorNode : public rclcpp::Node {
     rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr imu_pub;
   };
 
-  void registerAgent(const std::string& aname);
-
+  // --- Callbacks ---
   void statusCallback(const std::string& aname,
                       const coug_interfaces::msg::AgentStatus::SharedPtr msg);
+
+  // --- Helpers ---
+  void registerAgent(const std::string& aname);
 
   nav_msgs::msg::Odometry convertToOdom(const std::string& aname,
                                         const coug_interfaces::msg::AgentStatus::SharedPtr msg);

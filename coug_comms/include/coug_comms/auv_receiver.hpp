@@ -32,13 +32,16 @@ class AuvReceiverNode : public rclcpp::Node {
   explicit AuvReceiverNode(const rclcpp::NodeOptions& options);
 
  private:
+  // --- Callbacks ---
   void modemRecCallback(const seatrac_interfaces::msg::ModemRec::SharedPtr msg);
 
+  // --- Helpers ---
   void callService(rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr client, utils::MsgId cmd);
 
   void recordServiceResult(const std::string& service, const std::string& transport,
                            bool succeeded);
 
+  // --- Diagnostics ---
   void checkServiceStatus(diagnostic_updater::DiagnosticStatusWrapper& stat);
 
   // --- ROS Interfaces ---

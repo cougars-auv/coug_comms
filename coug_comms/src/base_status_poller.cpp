@@ -84,6 +84,62 @@ BaseStatusPollerNode::BaseStatusPollerNode(const rclcpp::NodeOptions& options)
   RCLCPP_INFO(get_logger(), "Initialization complete.");
 }
 
+void BaseStatusPollerNode::tickCallback() {
+  if (awaiting_response_ && (now() - request_time_).seconds() > params_.response_timeout_sec) {
+    failPendingRequest("missed driver report, node-level response timeout");
+  }
+  pollNextIfReady();
+}
+
+void BaseStatusPollerNode::modemRecCallback(
+    const seatrac_interfaces::msg::ModemRec::SharedPtr msg) {
+  if (!awaiting_response_ || !msg->local_flag || msg->src_id != pending_beacon_) return;
+
+  auto it = agents_.find(pending_beacon_);
+  if (it == agents_.end()) {
+    awaiting_response_ = false;
+    return;
+  }
+
+  coug_interfaces::msg::AgentStatus status;
+  if (!utils::decodeStatus(msg->packet_data, msg->packet_len, status)) {
+    failPendingRequest("undecodable status payload");
+    pollNextIfReady();
+    return;
+  }
+
+  // Driver units: decimeters for ranges/depths, decidegrees for angles
+  status.includes_range = msg->includes_range;
+  status.range_dist = msg->includes_range ? msg->range_dist * kDecimetersToMeters : 0.0;
+
+  // Convert FRD -> FLU
+  status.includes_usbl = msg->includes_usbl;
+  status.usbl_azimuth = msg->includes_usbl ? -msg->usbl_azimuth * kSeatracToRad : 0.0;
+  status.usbl_elevation = msg->includes_usbl ? msg->usbl_elevation * kSeatracToRad : 0.0;
+
+  status.includes_position = msg->includes_position;
+  status.position_depth = msg->includes_position ? msg->position_depth * kDecimetersToMeters : 0.0;
+
+  status.header.frame_id =
+      params_.use_parameter_frame ? params_.parameter_frame : msg->header.frame_id;
+
+  publishStatus(it->second, status, "ACOUSTIC");
+  publishPolledTransform(it->second, *msg);
+
+  awaiting_response_ = false;
+  scheduleNextPoll();
+  pollNextIfReady();
+}
+
+void BaseStatusPollerNode::modemCmdUpdateCallback(
+    const seatrac_interfaces::msg::ModemCmdUpdate::SharedPtr msg) {
+  if (!awaiting_response_ || msg->target_id != pending_beacon_) return;
+  if (msg->command_status_code != CST_XCVR_RESP_TIMEOUT) return;
+
+  failPendingRequest("driver-level response timeout");
+  pollNextIfReady();
+}
+
 void BaseStatusPollerNode::registerAgent(const std::string& aname, uint8_t beacon_id,
                                          const std::string& diag_prefix) {
   AgentEntry a;
@@ -118,13 +174,6 @@ void BaseStatusPollerNode::registerAgent(const std::string& aname, uint8_t beaco
   }
 
   RCLCPP_INFO(get_logger(), "Registered agent '%s' (beacon %d).", aname.c_str(), beacon_id);
-}
-
-void BaseStatusPollerNode::tickCallback() {
-  if (awaiting_response_ && (now() - request_time_).seconds() > params_.response_timeout_sec) {
-    failPendingRequest("missed driver report, node-level response timeout");
-  }
-  pollNextIfReady();
 }
 
 void BaseStatusPollerNode::pollNextIfReady() {
@@ -175,55 +224,6 @@ void BaseStatusPollerNode::publishStatus(AgentEntry& agent,
   agent.responses++;
   agent.last_transport = transport;
   agent.last_response_time = now();
-}
-
-void BaseStatusPollerNode::modemRecCallback(
-    const seatrac_interfaces::msg::ModemRec::SharedPtr msg) {
-  if (!awaiting_response_ || !msg->local_flag || msg->src_id != pending_beacon_) return;
-
-  auto it = agents_.find(pending_beacon_);
-  if (it == agents_.end()) {
-    awaiting_response_ = false;
-    return;
-  }
-
-  coug_interfaces::msg::AgentStatus status;
-  if (!utils::decodeStatus(msg->packet_data, msg->packet_len, status)) {
-    failPendingRequest("undecodable status payload");
-    pollNextIfReady();
-    return;
-  }
-
-  // Driver units: decimeters for ranges/depths, decidegrees for angles
-  status.includes_range = msg->includes_range;
-  status.range_dist = msg->includes_range ? msg->range_dist * kDecimetersToMeters : 0.0;
-
-  // Convert FRD -> FLU
-  status.includes_usbl = msg->includes_usbl;
-  status.usbl_azimuth = msg->includes_usbl ? -msg->usbl_azimuth * kSeatracToRad : 0.0;
-  status.usbl_elevation = msg->includes_usbl ? msg->usbl_elevation * kSeatracToRad : 0.0;
-
-  status.includes_position = msg->includes_position;
-  status.position_depth = msg->includes_position ? msg->position_depth * kDecimetersToMeters : 0.0;
-
-  status.header.frame_id =
-      params_.use_parameter_frame ? params_.parameter_frame : msg->header.frame_id;
-
-  publishStatus(it->second, status, "ACOUSTIC");
-  publishPolledTransform(it->second, *msg);
-
-  awaiting_response_ = false;
-  scheduleNextPoll();
-  pollNextIfReady();
-}
-
-void BaseStatusPollerNode::modemCmdUpdateCallback(
-    const seatrac_interfaces::msg::ModemCmdUpdate::SharedPtr msg) {
-  if (!awaiting_response_ || msg->target_id != pending_beacon_) return;
-  if (msg->command_status_code != CST_XCVR_RESP_TIMEOUT) return;
-
-  failPendingRequest("driver-level response timeout");
-  pollNextIfReady();
 }
 
 void BaseStatusPollerNode::failPendingRequest(const char* reason) {
