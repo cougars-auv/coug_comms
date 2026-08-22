@@ -12,13 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/**
- * @file auv_status_stager.hpp
- * @brief ROS 2 node for staging the AUV's status for acoustic relay.
- * @author Nelson Durrant
- * @date June 2026
- */
-
 #pragma once
 
 #include <memory>
@@ -30,23 +23,11 @@
 
 namespace coug_comms {
 
-/**
- * @class AuvStatusStagerNode
- * @brief ROS 2 node for staging the AUV's status for acoustic relay.
- */
 class AuvStatusStagerNode : public rclcpp::Node {
  public:
-  /**
-   * @brief Constructs the node and sets up status staging.
-   * @param options The node options.
-   */
   explicit AuvStatusStagerNode(const rclcpp::NodeOptions& options);
 
  private:
-  /**
-   * @brief Encodes an incoming status and stages it in the modem data queue.
-   * @param msg The incoming AgentStatus message.
-   */
   void statusCallback(const coug_interfaces::msg::AgentStatus::SharedPtr msg);
 
   // --- ROS Interfaces ---

@@ -12,13 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/**
- * @file base_status_extractor.cpp
- * @brief Implementation of the BaseStatusExtractorNode.
- * @author Nelson Durrant
- * @date June 2026
- */
-
 #include "coug_comms/base_status_extractor.hpp"
 
 #include <rclcpp_components/register_node_macro.hpp>

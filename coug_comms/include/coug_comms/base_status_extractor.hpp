@@ -12,13 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/**
- * @file base_status_extractor.hpp
- * @brief ROS 2 node for extracting AgentStatus into standard topics.
- * @author Nelson Durrant
- * @date June 2026
- */
-
 #pragma once
 
 #include <memory>
@@ -34,23 +27,11 @@
 
 namespace coug_comms {
 
-/**
- * @class BaseStatusExtractorNode
- * @brief ROS 2 node for extracting AgentStatus into standard topics.
- */
 class BaseStatusExtractorNode : public rclcpp::Node {
  public:
-  /**
-   * @brief Constructs the node and sets up extraction subscriptions/publishers.
-   * @param options The node options.
-   */
   explicit BaseStatusExtractorNode(const rclcpp::NodeOptions& options);
 
  private:
-  /**
-   * @struct AgentEntry
-   * @brief Per-agent subscriptions and publishers.
-   */
   struct AgentEntry {
     std::string name;
     rclcpp::Subscription<coug_interfaces::msg::AgentStatus>::SharedPtr status_sub;
@@ -59,41 +40,16 @@ class BaseStatusExtractorNode : public rclcpp::Node {
     rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr imu_pub;
   };
 
-  /**
-   * @brief Creates status subscriptions and extraction publishers for one agent.
-   * @param aname The agent's ROS namespace.
-   */
   void registerAgent(const std::string& aname);
 
-  /**
-   * @brief Splits an AgentStatus into the agent's odometry, depth, and IMU topics.
-   * @param aname The agent's ROS namespace.
-   * @param msg The incoming AgentStatus message.
-   */
   void statusCallback(const std::string& aname,
                       const coug_interfaces::msg::AgentStatus::SharedPtr msg);
 
-  /**
-   * @brief Converts the status pose into map-frame odometry for the agent's base frame.
-   * @param aname The agent's ROS namespace.
-   * @param msg The incoming AgentStatus message.
-   * @return The converted Odometry message; twist fields are left zeroed.
-   */
   nav_msgs::msg::Odometry convertToOdom(const std::string& aname,
                                         const coug_interfaces::msg::AgentStatus::SharedPtr msg);
 
-  /**
-   * @brief Converts the status pressure depth into Z-only odometry.
-   * @param msg The incoming AgentStatus message.
-   * @return The converted Odometry message; only the Z position is populated.
-   */
   nav_msgs::msg::Odometry convertToDepth(const coug_interfaces::msg::AgentStatus::SharedPtr msg);
 
-  /**
-   * @brief Converts the status orientation into an IMU message.
-   * @param msg The incoming AgentStatus message.
-   * @return The converted Imu message; only the orientation is populated.
-   */
   sensor_msgs::msg::Imu convertToImu(const coug_interfaces::msg::AgentStatus::SharedPtr msg);
 
   // --- Parameters ---

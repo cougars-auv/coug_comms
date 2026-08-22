@@ -12,13 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/**
- * @file protocol_enums.hpp
- * @brief Messaging protocol for radio and acoustic comms.
- * @author Nelson Durrant
- * @date June 2026
- */
-
 #pragma once
 
 #include <cstdint>
@@ -26,10 +19,6 @@
 
 namespace coug_comms::utils {
 
-/**
- * @enum MsgId
- * @brief Message identifiers for the comms protocol.
- */
 enum class MsgId : uint8_t {
   SRV_START = 0x10,
   SRV_STOP = 0x11,
@@ -41,11 +30,6 @@ enum class MsgId : uint8_t {
   RESP_STATUS = 0x31,
 };
 
-/**
- * @brief Maps a MsgId to its name for logging and diagnostics.
- * @param msg The MsgId enum value to convert.
- * @return The string representation of the MsgId.
- */
 inline std::string toString(MsgId msg) {
   switch (msg) {
     case MsgId::SRV_START:

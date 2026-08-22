@@ -12,13 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/**
- * @file base_status_poller.hpp
- * @brief ROS 2 node for polling AUV statuses over the acoustic modem.
- * @author Nelson Durrant
- * @date June 2026
- */
-
 #pragma once
 
 #include <tf2_ros/transform_broadcaster.h>
@@ -39,23 +32,11 @@
 
 namespace coug_comms {
 
-/**
- * @class BaseStatusPollerNode
- * @brief ROS 2 node for polling AUV statuses over the acoustic modem.
- */
 class BaseStatusPollerNode : public rclcpp::Node {
  public:
-  /**
-   * @brief Constructs the node and sets up status polling.
-   * @param options The node options.
-   */
   explicit BaseStatusPollerNode(const rclcpp::NodeOptions& options);
 
  private:
-  /**
-   * @struct AgentEntry
-   * @brief Per-agent state: identity, status publisher, direct link, and poll statistics.
-   */
   struct AgentEntry {
     std::string name;
     uint8_t beacon_id;
@@ -68,75 +49,28 @@ class BaseStatusPollerNode : public rclcpp::Node {
     double last_direct_heartbeat_sec = 0.0;
   };
 
-  /**
-   * @brief Creates a status publisher, direct-link subscription, and diagnostic task for one agent.
-   * @param name The agent's ROS namespace.
-   * @param beacon_id The agent's acoustic beacon ID.
-   * @param diag_prefix Namespace prefix for diagnostic task labels.
-   */
   void registerAgent(const std::string& name, uint8_t beacon_id, const std::string& diag_prefix);
 
-  /**
-   * @brief Timer callback that times out stale requests and drives polling.
-   */
   void tickCallback();
 
-  /**
-   * @brief Polls the next agent acoustically, skipping agents whose direct link is live.
-   */
   void pollNextIfReady();
 
-  /**
-   * @brief Arms the cooldown before the next poll may be sent.
-   */
   void scheduleNextPoll();
 
-  /**
-   * @brief Sends an acoustic status request to one agent and marks the channel busy.
-   * @param agent The target agent.
-   */
   void sendAcousticPoll(AgentEntry& agent);
 
-  /**
-   * @brief Republishes an agent's status and records the successful relay.
-   * @param agent The agent the status belongs to.
-   * @param status The status to republish.
-   * @param transport The transport it arrived on ("DIRECT" or "ACOUSTIC").
-   */
   void publishStatus(AgentEntry& agent, coug_interfaces::msg::AgentStatus status,
                      const std::string& transport);
 
-  /**
-   * @brief Decodes and republishes an acoustic status response from the polled agent.
-   * @param msg The incoming ModemRec message.
-   */
   void modemRecCallback(const seatrac_interfaces::msg::ModemRec::SharedPtr msg);
 
-  /**
-   * @brief Abandons the pending request early if the modem reports a response timeout.
-   * @param msg The incoming ModemCmdUpdate message.
-   */
   void modemCmdUpdateCallback(const seatrac_interfaces::msg::ModemCmdUpdate::SharedPtr msg);
 
-  /**
-   * @brief Logs a failed poll, frees the channel, and schedules the next poll.
-   * @param reason Human-readable cause for the warning log.
-   */
   void failPendingRequest(const char* reason);
 
-  /**
-   * @brief Broadcasts a transform to a "polled" frame at the agent's acoustic fix.
-   * @param agent The agent the fix belongs to.
-   * @param msg The incoming ModemRec message carrying the acoustic fix.
-   */
   void publishPolledTransform(const AgentEntry& agent,
                               const seatrac_interfaces::msg::ModemRec& msg);
 
-  /**
-   * @brief Diagnostic task reporting whether one agent is online and its direct-link heartbeat.
-   * @param stat The diagnostic status wrapper.
-   * @param beacon_id The agent's beacon ID.
-   */
   void checkAgentPollStatus(diagnostic_updater::DiagnosticStatusWrapper& stat, uint8_t beacon_id);
 
   // --- ROS Interfaces ---

@@ -12,13 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/**
- * @file seatrac_enums.hpp
- * @brief Shared enums for the Seatrac X150 driver.
- * @author Clayton Smith
- * @date February 2024
- */
-
 #pragma once
 
 #include <cstdint>

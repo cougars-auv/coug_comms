@@ -12,13 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/**
- * @file auv_status_bundler_node.cpp
- * @brief Standalone executable for the AuvStatusBundlerNode.
- * @author Nelson Durrant
- * @date June 2026
- */
-
 #include <memory>
 #include <rclcpp/rclcpp.hpp>
 

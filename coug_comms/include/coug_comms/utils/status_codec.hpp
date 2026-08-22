@@ -12,13 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/**
- * @file status_codec.hpp
- * @brief Acoustic encoding of coug_interfaces/AgentStatus.
- * @author Nelson Durrant (w Claude Opus 5)
- * @date June 2026
- */
-
 #pragma once
 
 #include <Eigen/Core>
@@ -64,73 +57,36 @@ inline constexpr double kQuatLimit = M_SQRT1_2;
 
 // --- Field Codecs ---
 
-/**
- * @brief Rounds a value to the nearest integer and clamps it into a range.
- * @param value The value to round (NaN is treated as zero).
- * @param lo The lowest allowed result.
- * @param hi The highest allowed result.
- * @return The rounded, clamped value.
- */
 inline double roundClamp(double value, double lo, double hi) {
   if (std::isnan(value)) return 0.0;
   return std::clamp(std::round(value), lo, hi);
 }
 
-/**
- * @brief Encodes a distance as centimeter counts, saturating at roughly +/- 327 m.
- * @param meters The distance in meters.
- * @return The resulting distance in centimeters.
- */
 inline int16_t encodeMeters(double meters) {
   return static_cast<int16_t>(roundClamp(meters * kCentimetersPerMeter,
                                          std::numeric_limits<int16_t>::lowest(),
                                          std::numeric_limits<int16_t>::max()));
 }
 
-/**
- * @brief Decodes centimeter counts back into meters.
- * @param counts The input distance in centimeters.
- * @return The resulting distance in meters.
- */
 inline double decodeMeters(int16_t counts) {
   return static_cast<double>(counts) / kCentimetersPerMeter;
 }
 
-/**
- * @brief Clamps a variance into the representable range, mapping invalid values to the maximum.
- * @param variance The input variance.
- * @return The resulting finite, positive, encodable variance.
- */
 inline double sanitizeVariance(double variance) {
   if (!std::isfinite(variance) || variance <= 0.0) return kMaxVariance;
   return std::clamp(variance, kMinVariance, kMaxVariance);
 }
 
-/**
- * @brief Encodes a variance as a float16, which keeps about three significant digits.
- * @param variance The variance to encode.
- * @return The resulting float16 bit pattern.
- */
 inline uint16_t encodeVariance(double variance) {
   const auto half = Eigen::half(static_cast<float>(sanitizeVariance(variance)));
   return Eigen::numext::bit_cast<uint16_t>(half);
 }
 
-/**
- * @brief Decodes a float16 bit pattern back into a variance.
- * @param bits The input float16 bit pattern.
- * @return The resulting variance, re-clamped in case the bits arrived corrupted.
- */
 inline double decodeVariance(uint16_t bits) {
   const auto half = Eigen::numext::bit_cast<Eigen::half>(bits);
   return sanitizeVariance(static_cast<double>(static_cast<float>(half)));
 }
 
-/**
- * @brief Packs a quaternion into 32 bits using smallest-three encoding.
- * @param quat The quaternion to encode (need not be normalized).
- * @return The resulting packed quaternion.
- */
 inline uint32_t encodeQuaternion(const geometry_msgs::msg::Quaternion& quat) {
   double q[4] = {quat.x, quat.y, quat.z, quat.w};
   double norm = std::sqrt(q[0] * q[0] + q[1] * q[1] + q[2] * q[2] + q[3] * q[3]);
@@ -157,11 +113,6 @@ inline uint32_t encodeQuaternion(const geometry_msgs::msg::Quaternion& quat) {
   return packed;
 }
 
-/**
- * @brief Unpacks a smallest-three encoded quaternion.
- * @param packed The input packed quaternion.
- * @return The resulting normalized quaternion.
- */
 inline geometry_msgs::msg::Quaternion decodeQuaternion(uint32_t packed) {
   const int largest = static_cast<int>(packed >> kQuatSelectorShift);
 
@@ -190,18 +141,8 @@ inline geometry_msgs::msg::Quaternion decodeQuaternion(uint32_t packed) {
 
 // --- Payload Cursor ---
 
-/**
- * @class PayloadCursor
- * @brief Walks a DAT payload, reading or writing fields in order.
- */
 class PayloadCursor {
  public:
-  /**
-   * @brief Writes a value at the cursor and advances past it.
-   * @tparam T The trivially-copyable field type.
-   * @param buf The payload to write into.
-   * @param value The value to write.
-   */
   template <typename T>
   void put(DatPayload& buf, T value) {
     assert(off_ + sizeof(T) <= buf.size());
@@ -209,12 +150,6 @@ class PayloadCursor {
     off_ += sizeof(T);
   }
 
-  /**
-   * @brief Reads a value at the cursor and advances past it.
-   * @tparam T The trivially-copyable field type.
-   * @param buf The payload to read from.
-   * @return The value read.
-   */
   template <typename T>
   T get(const DatPayload& buf) {
     assert(off_ + sizeof(T) <= buf.size());
@@ -224,10 +159,6 @@ class PayloadCursor {
     return value;
   }
 
-  /**
-   * @brief Gets the number of bytes the cursor has covered.
-   * @return The current offset into the payload.
-   */
   uint8_t offset() const { return static_cast<uint8_t>(off_); }
 
  private:
@@ -236,12 +167,6 @@ class PayloadCursor {
 
 // --- Status Codec ---
 
-/**
- * @brief Encodes an AgentStatus into an acoustic DAT payload.
- * @param status The status to encode.
- * @param buf The payload to write into.
- * @return The number of bytes written (always kStatusPacketLen).
- */
 inline uint8_t encodeStatus(const coug_interfaces::msg::AgentStatus& status, DatPayload& buf) {
   PayloadCursor cursor;
   cursor.put<uint8_t>(buf, static_cast<uint8_t>(MsgId::RESP_STATUS));
@@ -263,13 +188,6 @@ inline uint8_t encodeStatus(const coug_interfaces::msg::AgentStatus& status, Dat
   return cursor.offset();
 }
 
-/**
- * @brief Decodes an acoustic DAT payload, zeroing the covariance terms it does not carry.
- * @param buf The received payload.
- * @param len The received payload length.
- * @param status The status to populate.
- * @return True if the payload was long enough and carried a RESP_STATUS id, false otherwise.
- */
 inline bool decodeStatus(const DatPayload& buf, uint8_t len,
                          coug_interfaces::msg::AgentStatus& status) {
   if (len < kStatusPacketLen) return false;

@@ -12,13 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/**
- * @file auv_receiver.cpp
- * @brief Implementation of the AuvReceiverNode.
- * @author Nelson Durrant
- * @date June 2026
- */
-
 #include "coug_comms/auv_receiver.hpp"
 
 #include <rclcpp_components/register_node_macro.hpp>

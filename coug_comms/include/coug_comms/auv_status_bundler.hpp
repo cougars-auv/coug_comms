@@ -12,13 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/**
- * @file auv_status_bundler.hpp
- * @brief ROS 2 node for bundling sensor topics into AgentStatus.
- * @author Nelson Durrant
- * @date June 2026
- */
-
 #pragma once
 
 #include <tf2_ros/buffer.h>
@@ -34,40 +27,17 @@
 
 namespace coug_comms {
 
-/**
- * @class AuvStatusBundlerNode
- * @brief ROS 2 node for bundling sensor topics into AgentStatus.
- */
 class AuvStatusBundlerNode : public rclcpp::Node {
  public:
-  /**
-   * @brief Constructs the node and sets up bundling logic.
-   * @param options The node options.
-   */
   explicit AuvStatusBundlerNode(const rclcpp::NodeOptions& options);
 
  private:
-  /**
-   * @brief Caches the latest local odometry message and bundles a status from it.
-   * @param msg The incoming Odometry message.
-   */
   void odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg);
 
-  /**
-   * @brief Caches the latest pressure/depth odometry message.
-   * @param msg The incoming depth Odometry message.
-   */
   void depthCallback(const nav_msgs::msg::Odometry::SharedPtr msg);
 
-  /**
-   * @brief Caches the latest IMU orientation message.
-   * @param msg The incoming Imu message.
-   */
   void imuCallback(const sensor_msgs::msg::Imu::SharedPtr msg);
 
-  /**
-   * @brief Bundles the cached sensors into an AgentStatus and publishes it.
-   */
   void publishStatus();
 
   // --- ROS Interfaces ---

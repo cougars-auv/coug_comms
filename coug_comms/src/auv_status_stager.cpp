@@ -12,13 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/**
- * @file auv_status_stager.cpp
- * @brief Implementation of the AuvStatusStagerNode.
- * @author Nelson Durrant
- * @date June 2026
- */
-
 #include "coug_comms/auv_status_stager.hpp"
 
 #include <rclcpp_components/register_node_macro.hpp>

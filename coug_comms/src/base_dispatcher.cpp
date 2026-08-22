@@ -12,13 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/**
- * @file base_dispatcher.cpp
- * @brief Implementation of the BaseDispatcherNode.
- * @author Nelson Durrant
- * @date June 2026
- */
-
 #include "coug_comms/base_dispatcher.hpp"
 
 #include <rclcpp_components/register_node_macro.hpp>

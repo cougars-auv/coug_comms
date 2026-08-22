@@ -12,13 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/**
- * @file auv_receiver.hpp
- * @brief ROS 2 node that runs base station service requests received over the modem.
- * @author Nelson Durrant
- * @date June 2026
- */
-
 #pragma once
 
 #include <deque>
@@ -34,45 +27,18 @@
 
 namespace coug_comms {
 
-/**
- * @class AuvReceiverNode
- * @brief ROS 2 node that runs base station service requests received over the modem.
- */
 class AuvReceiverNode : public rclcpp::Node {
  public:
-  /**
-   * @brief Constructs the node and sets up base station service reception.
-   * @param options The node options.
-   */
   explicit AuvReceiverNode(const rclcpp::NodeOptions& options);
 
  private:
-  /**
-   * @brief Dispatches an incoming service request to the appropriate client.
-   * @param msg The incoming ModemRec message.
-   */
   void modemRecCallback(const seatrac_interfaces::msg::ModemRec::SharedPtr msg);
 
-  /**
-   * @brief Calls a Trigger service, logging and recording the outcome.
-   * @param client The service client to call.
-   * @param cmd The service message ID (names the service in logs and history).
-   */
   void callService(rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr client, utils::MsgId cmd);
 
-  /**
-   * @brief Records a service outcome in the rolling history, trimming to the last few.
-   * @param service The name of the service that was relayed.
-   * @param transport The transport used (e.g. "ACOUSTIC").
-   * @param succeeded Whether the service call succeeded.
-   */
   void recordServiceResult(const std::string& service, const std::string& transport,
                            bool succeeded);
 
-  /**
-   * @brief Diagnostic task reporting the last few services received and their results.
-   * @param stat The diagnostic status wrapper.
-   */
   void checkServiceStatus(diagnostic_updater::DiagnosticStatusWrapper& stat);
 
   // --- ROS Interfaces ---
@@ -90,10 +56,6 @@ class AuvReceiverNode : public rclcpp::Node {
   auv_receiver_node::Params params_;
 
   // --- State ---
-  /**
-   * @struct ServiceResult
-   * @brief A single received service, the transport it arrived on, and whether the call succeeded.
-   */
   struct ServiceResult {
     std::string service;
     std::string transport;

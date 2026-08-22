@@ -12,13 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/**
- * @file test_status_codec.cpp
- * @brief Unit tests for status_codec.hpp.
- * @author Nelson Durrant (w Claude Opus 5)
- * @date June 2026
- */
-
 #include <gtest/gtest.h>
 
 #include <cmath>
@@ -39,9 +32,6 @@ constexpr double kMetersTol = 0.005;    // exactly half the 1 cm quantization st
 constexpr double kQuatTol = 0.0025;     // the rebuilt component stacks all three 0.0007 half-steps
 constexpr double kVarianceTol = 0.001;  // 2x margin on float16's ~0.05% worst-case relative error
 
-/**
- * @brief Builds a normalized quaternion.
- */
 geometry_msgs::msg::Quaternion makeQuat(double x, double y, double z, double w) {
   const double norm = std::sqrt(x * x + y * y + z * z + w * w);
   geometry_msgs::msg::Quaternion quat;
@@ -52,9 +42,6 @@ geometry_msgs::msg::Quaternion makeQuat(double x, double y, double z, double w) 
   return quat;
 }
 
-/**
- * @brief Checks two quaternions match within the component quantization, naming the call site.
- */
 void expectQuatNear(const geometry_msgs::msg::Quaternion& actual,
                     const geometry_msgs::msg::Quaternion& expected, const char* label) {
   SCOPED_TRACE(label);
@@ -66,9 +53,6 @@ void expectQuatNear(const geometry_msgs::msg::Quaternion& actual,
 
 }  // namespace
 
-/**
- * @brief Verify each transmitted field round-trips within its quantization or saturation bound.
- */
 TEST(StatusCodecTest, RoundTrip) {
   coug_interfaces::msg::AgentStatus in;
   in.local_odometry.position.x = 12.34;
