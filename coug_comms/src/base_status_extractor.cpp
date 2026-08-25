@@ -27,54 +27,55 @@ BaseStatusExtractorNode::BaseStatusExtractorNode(const rclcpp::NodeOptions& opti
   this->declare_parameter<std::vector<std::string>>("agent_namespaces", std::vector<std::string>{});
   const auto agent_namespaces = this->get_parameter("agent_namespaces").as_string_array();
 
-  for (const auto& aname : agent_namespaces) {
-    registerAgent(aname);
+  for (const auto& agent_name : agent_namespaces) {
+    registerAgent(agent_name);
   }
 
   RCLCPP_INFO(get_logger(), "Initialization complete.");
 }
 
 void BaseStatusExtractorNode::statusCallback(
-    const std::string& aname, const coug_interfaces::msg::AgentStatus::SharedPtr msg) {
-  auto it = agents_.find(aname);
+    const std::string& agent_name, const coug_interfaces::msg::AgentStatus::SharedPtr msg) {
+  auto it = agents_.find(agent_name);
   if (it == agents_.end()) {
     return;
   }
 
-  it->second.odom_pub->publish(convertToOdom(aname, msg));
-  it->second.depth_pub->publish(convertToDepth(msg));
-  it->second.imu_pub->publish(convertToImu(msg));
+  auto& agent = it->second;
+  agent.odom_pub->publish(convertToOdom(agent_name, msg));
+  agent.depth_pub->publish(convertToDepth(msg));
+  agent.imu_pub->publish(convertToImu(msg));
 }
 
-void BaseStatusExtractorNode::registerAgent(const std::string& aname) {
-  AgentEntry a;
-  a.name = aname;
+void BaseStatusExtractorNode::registerAgent(const std::string& agent_name) {
+  AgentEntry agent;
+  agent.name = agent_name;
 
-  a.odom_pub = create_publisher<nav_msgs::msg::Odometry>("/" + aname + "/" + params_.odom_topic,
-                                                         rclcpp::SystemDefaultsQoS());
+  agent.odom_pub = create_publisher<nav_msgs::msg::Odometry>(
+      "/" + agent_name + "/" + params_.odom_topic, rclcpp::SystemDefaultsQoS());
 
-  a.depth_pub = create_publisher<nav_msgs::msg::Odometry>("/" + aname + "/" + params_.depth_topic,
-                                                          rclcpp::SystemDefaultsQoS());
+  agent.depth_pub = create_publisher<nav_msgs::msg::Odometry>(
+      "/" + agent_name + "/" + params_.depth_topic, rclcpp::SystemDefaultsQoS());
 
-  a.imu_pub = create_publisher<sensor_msgs::msg::Imu>("/" + aname + "/" + params_.imu_topic,
-                                                      rclcpp::SystemDefaultsQoS());
+  agent.imu_pub = create_publisher<sensor_msgs::msg::Imu>(
+      "/" + agent_name + "/" + params_.imu_topic, rclcpp::SystemDefaultsQoS());
 
-  a.status_sub = create_subscription<coug_interfaces::msg::AgentStatus>(
-      "/" + aname + "/" + params_.status_topic, rclcpp::SystemDefaultsQoS(),
-      [this, aname](const coug_interfaces::msg::AgentStatus::SharedPtr msg) {
-        statusCallback(aname, msg);
+  agent.status_sub = create_subscription<coug_interfaces::msg::AgentStatus>(
+      "/" + agent_name + "/" + params_.status_topic, rclcpp::SystemDefaultsQoS(),
+      [this, agent_name](const coug_interfaces::msg::AgentStatus::SharedPtr msg) {
+        statusCallback(agent_name, msg);
       });
 
-  agents_.emplace(aname, std::move(a));
-  RCLCPP_INFO(get_logger(), "Registered extractor for agent '%s'.", aname.c_str());
+  agents_.emplace(agent_name, std::move(agent));
+  RCLCPP_INFO(get_logger(), "Registered extractor for agent '%s'.", agent_name.c_str());
 }
 
 nav_msgs::msg::Odometry BaseStatusExtractorNode::convertToOdom(
-    const std::string& aname, const coug_interfaces::msg::AgentStatus::SharedPtr msg) {
+    const std::string& agent_name, const coug_interfaces::msg::AgentStatus::SharedPtr msg) {
   nav_msgs::msg::Odometry odom_msg;
   odom_msg.header = msg->header;
   odom_msg.header.frame_id = "map";
-  odom_msg.child_frame_id = aname + "/base_link";
+  odom_msg.child_frame_id = agent_name + "/base_link";
   odom_msg.pose.pose = msg->local_odometry;
   odom_msg.pose.covariance = msg->odometry_covariance;
   return odom_msg;

@@ -41,13 +41,13 @@ class BaseStatusExtractorNode : public rclcpp::Node {
   };
 
   // --- Callbacks ---
-  void statusCallback(const std::string& aname,
+  void statusCallback(const std::string& agent_name,
                       const coug_interfaces::msg::AgentStatus::SharedPtr msg);
 
   // --- Helpers ---
-  void registerAgent(const std::string& aname);
+  void registerAgent(const std::string& agent_name);
 
-  nav_msgs::msg::Odometry convertToOdom(const std::string& aname,
+  nav_msgs::msg::Odometry convertToOdom(const std::string& agent_name,
                                         const coug_interfaces::msg::AgentStatus::SharedPtr msg);
 
   nav_msgs::msg::Odometry convertToDepth(const coug_interfaces::msg::AgentStatus::SharedPtr msg);

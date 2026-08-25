@@ -67,14 +67,14 @@ BaseStatusPollerNode::BaseStatusPollerNode(const rclcpp::NodeOptions& options)
     prefix = clean_ns.empty() ? "" : "[" + clean_ns + "] ";
   }
 
-  for (const auto& aname : agent_namespaces) {
-    int raw_id = this->declare_parameter<int>("beacon_ids." + aname, -1);
+  for (const auto& agent_name : agent_namespaces) {
+    int raw_id = this->declare_parameter<int>("beacon_ids." + agent_name, -1);
     if (raw_id < 0 || raw_id > 15) {
       RCLCPP_ERROR(get_logger(), "Missing or invalid beacon_ids.%s (got %d) — skipping '%s'.",
-                   aname.c_str(), raw_id, aname.c_str());
+                   agent_name.c_str(), raw_id, agent_name.c_str());
       continue;
     }
-    registerAgent(aname, static_cast<uint8_t>(raw_id), prefix);
+    registerAgent(agent_name, static_cast<uint8_t>(raw_id), prefix);
   }
 
   next_poll_allowed_ = now();
@@ -140,19 +140,19 @@ void BaseStatusPollerNode::modemCmdUpdateCallback(
   pollNextIfReady();
 }
 
-void BaseStatusPollerNode::registerAgent(const std::string& aname, uint8_t beacon_id,
+void BaseStatusPollerNode::registerAgent(const std::string& agent_name, uint8_t beacon_id,
                                          const std::string& diag_prefix) {
-  AgentEntry a;
-  a.name = aname;
-  a.beacon_id = beacon_id;
-  a.is_lead = (aname == params_.lead_agent);
-  a.status_pub = create_publisher<coug_interfaces::msg::AgentStatus>(
-      "/" + aname + "/" + params_.status_topic, rclcpp::SystemDefaultsQoS());
-  a.last_response_time = now();
+  AgentEntry agent;
+  agent.name = agent_name;
+  agent.beacon_id = beacon_id;
+  agent.is_lead = (agent_name == params_.lead_agent);
+  agent.status_pub = create_publisher<coug_interfaces::msg::AgentStatus>(
+      "/" + agent_name + "/" + params_.status_topic, rclcpp::SystemDefaultsQoS());
+  agent.last_response_time = now();
 
-  if (params_.enable_direct_comms || a.is_lead) {
-    a.direct_sub = create_subscription<coug_interfaces::msg::AgentStatus>(
-        "/" + aname + "/" + params_.direct_status_topic, rclcpp::SystemDefaultsQoS(),
+  if (params_.enable_direct_comms || agent.is_lead) {
+    agent.direct_sub = create_subscription<coug_interfaces::msg::AgentStatus>(
+        "/" + agent_name + "/" + params_.direct_status_topic, rclcpp::SystemDefaultsQoS(),
         [this, beacon_id](const coug_interfaces::msg::AgentStatus::SharedPtr msg) {
           auto it = agents_.find(beacon_id);
           if (it == agents_.end()) return;
@@ -161,27 +161,27 @@ void BaseStatusPollerNode::registerAgent(const std::string& aname, uint8_t beaco
         });
   }
 
-  if (!a.is_lead) {
+  if (!agent.is_lead) {
     beacon_order_.push_back(beacon_id);
   }
-  agents_.emplace(beacon_id, std::move(a));
+  agents_.emplace(beacon_id, std::move(agent));
 
   if (params_.publish_diagnostics) {
-    diagnostic_updater_.add(diag_prefix + "Polling Status (" + aname + ")",
+    diagnostic_updater_.add(diag_prefix + "Polling Status (" + agent_name + ")",
                             [this, beacon_id](diagnostic_updater::DiagnosticStatusWrapper& stat) {
                               checkAgentPollStatus(stat, beacon_id);
                             });
   }
 
-  RCLCPP_INFO(get_logger(), "Registered agent '%s' (beacon %d).", aname.c_str(), beacon_id);
+  RCLCPP_INFO(get_logger(), "Registered agent '%s' (beacon %d).", agent_name.c_str(), beacon_id);
 }
 
 void BaseStatusPollerNode::pollNextIfReady() {
   if (awaiting_response_ || beacon_order_.empty()) return;
   if (now() < next_poll_allowed_) return;
 
-  AgentEntry& agent = agents_.at(beacon_order_[next_index_]);
-  next_index_ = (next_index_ + 1) % beacon_order_.size();
+  AgentEntry& agent = agents_.at(beacon_order_[next_beacon_idx_]);
+  next_beacon_idx_ = (next_beacon_idx_ + 1) % beacon_order_.size();
 
   const bool direct_link_up =
       agent.last_direct_heartbeat_sec > 0.0 &&
@@ -202,13 +202,13 @@ void BaseStatusPollerNode::scheduleNextPoll() {
 }
 
 void BaseStatusPollerNode::sendAcousticPoll(AgentEntry& agent) {
-  seatrac_interfaces::msg::ModemSend send;
-  send.msg_id = CID_DAT_SEND;
-  send.dest_id = agent.beacon_id;
-  send.msg_type = MSG_REQX;
-  send.packet_len = 1;
-  send.packet_data[0] = static_cast<uint8_t>(MsgId::REQ_STATUS);
-  modem_send_pub_->publish(send);
+  seatrac_interfaces::msg::ModemSend send_msg;
+  send_msg.msg_id = CID_DAT_SEND;
+  send_msg.dest_id = agent.beacon_id;
+  send_msg.msg_type = MSG_REQX;
+  send_msg.packet_len = 1;
+  send_msg.packet_data[0] = static_cast<uint8_t>(MsgId::REQ_STATUS);
+  modem_send_pub_->publish(send_msg);
 
   awaiting_response_ = true;
   pending_beacon_ = agent.beacon_id;
@@ -242,33 +242,35 @@ void BaseStatusPollerNode::publishPolledTransform(const AgentEntry& agent,
   const double azimuth = -msg.usbl_azimuth * kSeatracToRad;                           // [rad]
   const double range = msg.range_dist * kDecimetersToMeters;                          // [m]
   const double depth = (msg.position_depth - msg.depth_local) * kDecimetersToMeters;  // [m]
-  const double horizontal = std::sqrt(std::max(range * range - depth * depth, 0.0));
+  const double horizontal_range = std::sqrt(std::max(range * range - depth * depth, 0.0));
 
-  geometry_msgs::msg::TransformStamped tf;
-  tf.header.stamp = now();
-  tf.header.frame_id = params_.use_parameter_frame ? params_.parameter_frame : msg.header.frame_id;
-  tf.child_frame_id = agent.name + "/polled_modem_link";
-  tf.transform.translation.x = horizontal * std::cos(azimuth);
-  tf.transform.translation.y = horizontal * std::sin(azimuth);
-  tf.transform.translation.z = -depth;
-  tf.transform.rotation.w = 1.0;
+  geometry_msgs::msg::TransformStamped tf_msg;
+  tf_msg.header.stamp = now();
+  tf_msg.header.frame_id =
+      params_.use_parameter_frame ? params_.parameter_frame : msg.header.frame_id;
+  tf_msg.child_frame_id = agent.name + "/polled_modem_link";
+  tf_msg.transform.translation.x = horizontal_range * std::cos(azimuth);
+  tf_msg.transform.translation.y = horizontal_range * std::sin(azimuth);
+  tf_msg.transform.translation.z = -depth;
+  tf_msg.transform.rotation.w = 1.0;
 
-  tf_broadcaster_->sendTransform(tf);
+  tf_broadcaster_->sendTransform(tf_msg);
 }
 
 void BaseStatusPollerNode::checkAgentPollStatus(diagnostic_updater::DiagnosticStatusWrapper& stat,
                                                 uint8_t beacon_id) {
-  const AgentEntry& a = agents_.at(beacon_id);
+  const AgentEntry& agent = agents_.at(beacon_id);
 
-  double direct_heartbeat_age =
-      (a.last_direct_heartbeat_sec > 0.0) ? (now().seconds() - a.last_direct_heartbeat_sec) : -1.0;
+  double direct_heartbeat_age = (agent.last_direct_heartbeat_sec > 0.0)
+                                    ? (now().seconds() - agent.last_direct_heartbeat_sec)
+                                    : -1.0;
   stat.add("Time Since Direct Heartbeat (s)", direct_heartbeat_age);
 
-  double time_since = (a.responses > 0) ? (now() - a.last_response_time).seconds() : -1.0;
-  if (a.responses > 0) stat.add("Last Transport", a.last_transport);
+  double time_since = (agent.responses > 0) ? (now() - agent.last_response_time).seconds() : -1.0;
+  if (agent.responses > 0) stat.add("Last Transport", agent.last_transport);
   stat.add("Time Since Last (s)", time_since);
 
-  if (a.responses == 0 || time_since > params_.diagnostic_timeout_sec) {
+  if (agent.responses == 0 || time_since > params_.diagnostic_timeout_sec) {
     stat.summary(diagnostic_msgs::msg::DiagnosticStatus::WARN, "Agent is unreachable.");
   } else {
     stat.summary(diagnostic_msgs::msg::DiagnosticStatus::OK, "Polled status acquired.");

@@ -56,9 +56,9 @@ AuvReceiverNode::AuvReceiverNode(const rclcpp::NodeOptions& options)
 void AuvReceiverNode::modemRecCallback(const seatrac_interfaces::msg::ModemRec::SharedPtr msg) {
   if (!msg->local_flag || msg->packet_len < 1) return;
 
-  const auto id = static_cast<MsgId>(msg->packet_data[0]);
+  const auto msg_id = static_cast<MsgId>(msg->packet_data[0]);
   rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr client;
-  switch (id) {
+  switch (msg_id) {
     case MsgId::SRV_START:
       client = start_client_;
       break;
@@ -81,9 +81,9 @@ void AuvReceiverNode::modemRecCallback(const seatrac_interfaces::msg::ModemRec::
       return;
   }
 
-  RCLCPP_INFO(get_logger(), "Received %s from beacon %d.", utils::toString(id).c_str(),
+  RCLCPP_INFO(get_logger(), "Received %s from beacon %d.", utils::toString(msg_id).c_str(),
               msg->src_id);
-  callService(client, id);
+  callService(client, msg_id);
 }
 
 void AuvReceiverNode::callService(rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr client,

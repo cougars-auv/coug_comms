@@ -59,7 +59,8 @@ class BaseDispatcherNode : public rclcpp::Node {
   };
 
   // --- Helpers ---
-  void registerAgent(const std::string& name, uint8_t beacon_id, const std::string& diag_prefix);
+  void registerAgent(const std::string& agent_name, uint8_t beacon_id,
+                     const std::string& diag_prefix);
 
   void handleServiceRequest(utils::MsgId cmd, uint8_t beacon_id,
                             rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr service,

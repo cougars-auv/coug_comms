@@ -57,7 +57,8 @@ class BaseStatusPollerNode : public rclcpp::Node {
   void modemCmdUpdateCallback(const seatrac_interfaces::msg::ModemCmdUpdate::SharedPtr msg);
 
   // --- Helpers ---
-  void registerAgent(const std::string& name, uint8_t beacon_id, const std::string& diag_prefix);
+  void registerAgent(const std::string& agent_name, uint8_t beacon_id,
+                     const std::string& diag_prefix);
 
   void pollNextIfReady();
 
@@ -91,7 +92,7 @@ class BaseStatusPollerNode : public rclcpp::Node {
   // --- State ---
   std::vector<uint8_t> beacon_order_;
   std::unordered_map<uint8_t, AgentEntry> agents_;
-  size_t next_index_ = 0;
+  size_t next_beacon_idx_ = 0;
   bool awaiting_response_ = false;
   uint8_t pending_beacon_ = 0;
   rclcpp::Time request_time_;
