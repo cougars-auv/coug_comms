@@ -110,7 +110,6 @@ void BaseStatusPollerNode::modemRecCallback(
     return;
   }
 
-  // Driver units: decimeters for ranges/depths, decidegrees for angles
   status.includes_range = msg->includes_range;
   status.range_dist = msg->includes_range ? msg->range_dist * kDecimetersToMeters : 0.0;
 
@@ -243,9 +242,9 @@ void BaseStatusPollerNode::publishPolledTransform(const AgentEntry& agent,
   }
 
   // Convert FRD -> FLU
-  const double azimuth = -msg.usbl_azimuth * kSeatracToRad;                           // [rad]
-  const double range = msg.range_dist * kDecimetersToMeters;                          // [m]
-  const double depth = (msg.position_depth - msg.depth_local) * kDecimetersToMeters;  // [m]
+  const double azimuth = -msg.usbl_azimuth * kSeatracToRad;
+  const double range = msg.range_dist * kDecimetersToMeters;
+  const double depth = (msg.position_depth - msg.depth_local) * kDecimetersToMeters;
   const double horizontal_range = std::sqrt(std::max(range * range - depth * depth, 0.0));
 
   geometry_msgs::msg::TransformStamped tf_msg;
