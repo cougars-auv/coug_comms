@@ -49,7 +49,7 @@ inline std::string toString(MsgId msg) {
     case MsgId::RESP_STATUS:
       return "RESP_STATUS";
   }
-  return "MSG_UNKNOWN";
+  return "UNKNOWN";
 }
 
 }  // namespace coug_comms::utils
