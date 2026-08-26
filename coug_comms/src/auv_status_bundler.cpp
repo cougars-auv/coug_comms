@@ -15,6 +15,7 @@
 #include "coug_comms/auv_status_bundler.hpp"
 
 #include <rclcpp_components/register_node_macro.hpp>
+#include <string>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
 namespace coug_comms {
@@ -61,6 +62,8 @@ void AuvStatusBundlerNode::imuCallback(const sensor_msgs::msg::Imu::SharedPtr ms
 }
 
 void AuvStatusBundlerNode::publishStatus() {
+  if (!last_odom_) return;
+
   coug_interfaces::msg::AgentStatus status;
   status.header.stamp = now();
 

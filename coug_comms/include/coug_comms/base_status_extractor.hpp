@@ -33,7 +33,6 @@ class BaseStatusExtractorNode : public rclcpp::Node {
 
  private:
   struct AgentEntry {
-    std::string name;
     rclcpp::Subscription<coug_interfaces::msg::AgentStatus>::SharedPtr status_sub;
     rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_pub;
     rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr depth_pub;

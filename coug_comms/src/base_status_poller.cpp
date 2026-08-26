@@ -47,16 +47,18 @@ BaseStatusPollerNode::BaseStatusPollerNode(const rclcpp::NodeOptions& options)
   const auto agent_namespaces = this->get_parameter("agent_namespaces").as_string_array();
 
   // --- ROS Interfaces ---
-  modem_send_pub_ = create_publisher<seatrac_interfaces::msg::ModemSend>(
-      params_.modem_send_topic, rclcpp::SystemDefaultsQoS());
+  tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
+
   modem_rec_sub_ = create_subscription<seatrac_interfaces::msg::ModemRec>(
       params_.modem_rec_topic, rclcpp::SystemDefaultsQoS(),
       std::bind(&BaseStatusPollerNode::modemRecCallback, this, std::placeholders::_1));
+
   modem_cmd_update_sub_ = create_subscription<seatrac_interfaces::msg::ModemCmdUpdate>(
       params_.modem_cmd_update_topic, rclcpp::SystemDefaultsQoS(),
       std::bind(&BaseStatusPollerNode::modemCmdUpdateCallback, this, std::placeholders::_1));
 
-  tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
+  modem_send_pub_ = create_publisher<seatrac_interfaces::msg::ModemSend>(
+      params_.modem_send_topic, rclcpp::SystemDefaultsQoS());
 
   // --- ROS Diagnostics ---
   std::string prefix;
@@ -87,6 +89,7 @@ BaseStatusPollerNode::BaseStatusPollerNode(const rclcpp::NodeOptions& options)
 void BaseStatusPollerNode::tickCallback() {
   if (awaiting_response_ && (now() - request_time_).seconds() > params_.response_timeout_sec) {
     failPendingRequest("missed driver report, node-level response timeout");
+    return;
   }
   pollNextIfReady();
 }
@@ -97,14 +100,13 @@ void BaseStatusPollerNode::modemRecCallback(
 
   auto it = agents_.find(pending_beacon_);
   if (it == agents_.end()) {
-    awaiting_response_ = false;
+    failPendingRequest("no agent registered for the pending beacon");
     return;
   }
 
   coug_interfaces::msg::AgentStatus status;
   if (!utils::decodeStatus(msg->packet_data, msg->packet_len, status)) {
     failPendingRequest("undecodable status payload");
-    pollNextIfReady();
     return;
   }
 
@@ -126,9 +128,7 @@ void BaseStatusPollerNode::modemRecCallback(
   publishStatus(it->second, status, "ACOUSTIC");
   publishPolledTransform(it->second, *msg);
 
-  awaiting_response_ = false;
-  scheduleNextPoll();
-  pollNextIfReady();
+  finishPendingRequest();
 }
 
 void BaseStatusPollerNode::modemCmdUpdateCallback(
@@ -137,7 +137,6 @@ void BaseStatusPollerNode::modemCmdUpdateCallback(
   if (msg->command_status_code != CST_XCVR_RESP_TIMEOUT) return;
 
   failPendingRequest("driver-level response timeout");
-  pollNextIfReady();
 }
 
 void BaseStatusPollerNode::registerAgent(const std::string& agent_name, uint8_t beacon_id,
@@ -151,7 +150,7 @@ void BaseStatusPollerNode::registerAgent(const std::string& agent_name, uint8_t 
   agent.last_response_time = now();
 
   if (params_.enable_direct_comms || agent.is_lead) {
-    agent.direct_sub = create_subscription<coug_interfaces::msg::AgentStatus>(
+    agent.direct_status_sub = create_subscription<coug_interfaces::msg::AgentStatus>(
         "/" + agent_name + "/" + params_.direct_status_topic, rclcpp::SystemDefaultsQoS(),
         [this, beacon_id](const coug_interfaces::msg::AgentStatus::SharedPtr msg) {
           auto it = agents_.find(beacon_id);
@@ -226,10 +225,15 @@ void BaseStatusPollerNode::publishStatus(AgentEntry& agent,
   agent.last_response_time = now();
 }
 
-void BaseStatusPollerNode::failPendingRequest(const char* reason) {
-  RCLCPP_WARN(get_logger(), "Beacon %d: %s.", pending_beacon_, reason);
+void BaseStatusPollerNode::finishPendingRequest() {
   awaiting_response_ = false;
   scheduleNextPoll();
+  pollNextIfReady();
+}
+
+void BaseStatusPollerNode::failPendingRequest(const std::string& reason) {
+  RCLCPP_WARN(get_logger(), "Beacon %d: %s.", pending_beacon_, reason.c_str());
+  finishPendingRequest();
 }
 
 void BaseStatusPollerNode::publishPolledTransform(const AgentEntry& agent,

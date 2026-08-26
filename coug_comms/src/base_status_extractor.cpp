@@ -49,8 +49,6 @@ void BaseStatusExtractorNode::statusCallback(
 
 void BaseStatusExtractorNode::registerAgent(const std::string& agent_name) {
   AgentEntry agent;
-  agent.name = agent_name;
-
   agent.odom_pub = create_publisher<nav_msgs::msg::Odometry>(
       "/" + agent_name + "/" + params_.odom_topic, rclcpp::SystemDefaultsQoS());
 
@@ -67,7 +65,7 @@ void BaseStatusExtractorNode::registerAgent(const std::string& agent_name) {
       });
 
   agents_.emplace(agent_name, std::move(agent));
-  RCLCPP_INFO(get_logger(), "Registered extractor for agent '%s'.", agent_name.c_str());
+  RCLCPP_INFO(get_logger(), "Registered agent '%s'.", agent_name.c_str());
 }
 
 nav_msgs::msg::Odometry BaseStatusExtractorNode::convertToOdom(

@@ -32,6 +32,12 @@ class AuvReceiverNode : public rclcpp::Node {
   explicit AuvReceiverNode(const rclcpp::NodeOptions& options);
 
  private:
+  struct ServiceResult {
+    std::string service;
+    std::string transport;
+    bool succeeded;
+  };
+
   // --- Callbacks ---
   void modemRecCallback(const seatrac_interfaces::msg::ModemRec::SharedPtr msg);
 
@@ -59,11 +65,6 @@ class AuvReceiverNode : public rclcpp::Node {
   auv_receiver_node::Params params_;
 
   // --- State ---
-  struct ServiceResult {
-    std::string service;
-    std::string transport;
-    bool succeeded;
-  };
   std::deque<ServiceResult> service_history_;
 };
 

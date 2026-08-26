@@ -48,13 +48,12 @@ class BaseDispatcherNode : public rclcpp::Node {
   };
 
   struct AgentEntry {
-    std::string name;
     uint8_t beacon_id;
     bool is_lead = false;
     std::vector<rclcpp::ServiceBase::SharedPtr> services;
     std::unordered_map<uint8_t, rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr> direct_clients;
     std::deque<ServiceResult> service_history;
-    rclcpp::Subscription<coug_interfaces::msg::AgentStatus>::SharedPtr direct_heartbeat_sub;
+    rclcpp::Subscription<coug_interfaces::msg::AgentStatus>::SharedPtr direct_status_sub;
     double last_direct_heartbeat_sec = 0.0;
   };
 
@@ -63,15 +62,15 @@ class BaseDispatcherNode : public rclcpp::Node {
                      const std::string& diag_prefix);
 
   void handleServiceRequest(utils::MsgId cmd, uint8_t beacon_id,
-                            rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr service,
+                            rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr service_handle,
                             std::shared_ptr<rmw_request_id_t> header);
 
   bool directServiceDispatch(utils::MsgId cmd, const AgentEntry& agent,
-                             rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr service,
+                             rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr service_handle,
                              std::shared_ptr<rmw_request_id_t> header);
 
-  void acousticServiceDispatch(utils::MsgId cmd, uint8_t beacon_id,
-                               rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr service,
+  void acousticServiceDispatch(utils::MsgId cmd, const AgentEntry& agent,
+                               rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr service_handle,
                                std::shared_ptr<rmw_request_id_t> header);
 
   void recordServiceResult(uint8_t beacon_id, const std::string& service,

@@ -42,7 +42,7 @@ class BaseStatusPollerNode : public rclcpp::Node {
     uint8_t beacon_id;
     bool is_lead = false;
     rclcpp::Publisher<coug_interfaces::msg::AgentStatus>::SharedPtr status_pub;
-    rclcpp::Subscription<coug_interfaces::msg::AgentStatus>::SharedPtr direct_sub;
+    rclcpp::Subscription<coug_interfaces::msg::AgentStatus>::SharedPtr direct_status_sub;
     size_t responses = 0;
     std::string last_transport;
     rclcpp::Time last_response_time;
@@ -69,7 +69,9 @@ class BaseStatusPollerNode : public rclcpp::Node {
   void publishStatus(AgentEntry& agent, coug_interfaces::msg::AgentStatus status,
                      const std::string& transport);
 
-  void failPendingRequest(const char* reason);
+  void finishPendingRequest();
+
+  void failPendingRequest(const std::string& reason);
 
   void publishPolledTransform(const AgentEntry& agent,
                               const seatrac_interfaces::msg::ModemRec& msg);

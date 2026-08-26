@@ -46,8 +46,9 @@ AuvReceiverNode::AuvReceiverNode(const rclcpp::NodeOptions& options)
     diagnostic_updater_.setHardwareID(clean_ns + "/auv_receiver_node");
 
     std::string prefix = clean_ns.empty() ? "" : "[" + clean_ns + "] ";
-    std::string cmd_task = prefix + "Service Status";
-    diagnostic_updater_.add(cmd_task, this, &AuvReceiverNode::checkServiceStatus);
+
+    std::string service_task = prefix + "Service Status";
+    diagnostic_updater_.add(service_task, this, &AuvReceiverNode::checkServiceStatus);
   }
 
   RCLCPP_INFO(get_logger(), "Initialization complete.");

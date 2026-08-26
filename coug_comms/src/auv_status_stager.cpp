@@ -31,11 +31,12 @@ AuvStatusStagerNode::AuvStatusStagerNode(const rclcpp::NodeOptions& options)
   params_ = param_listener_->get_params();
 
   // --- ROS Interfaces ---
-  modem_send_pub_ = create_publisher<seatrac_interfaces::msg::ModemSend>(
-      params_.modem_send_topic, rclcpp::SystemDefaultsQoS());
   status_sub_ = create_subscription<coug_interfaces::msg::AgentStatus>(
       params_.status_topic, rclcpp::SystemDefaultsQoS(),
       std::bind(&AuvStatusStagerNode::statusCallback, this, std::placeholders::_1));
+
+  modem_send_pub_ = create_publisher<seatrac_interfaces::msg::ModemSend>(
+      params_.modem_send_topic, rclcpp::SystemDefaultsQoS());
 
   RCLCPP_INFO(get_logger(), "Initialization complete.");
 }
