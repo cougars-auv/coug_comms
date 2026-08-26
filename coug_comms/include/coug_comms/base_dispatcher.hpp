@@ -26,6 +26,7 @@
 
 #include "coug_comms/base_dispatcher_parameters.hpp"
 #include "coug_comms/utils/protocol_enums.hpp"
+#include "coug_comms/utils/service_enums.hpp"
 #include "coug_interfaces/msg/agent_status.hpp"
 
 namespace coug_comms {
@@ -44,7 +45,7 @@ class BaseDispatcherNode : public rclcpp::Node {
   struct ServiceResult {
     std::string service;
     std::string transport;
-    bool succeeded;
+    utils::ServiceOutcome outcome;
   };
 
   struct AgentEntry {
@@ -74,7 +75,7 @@ class BaseDispatcherNode : public rclcpp::Node {
                                std::shared_ptr<rmw_request_id_t> header);
 
   void recordServiceResult(uint8_t beacon_id, const std::string& service,
-                           const std::string& transport, bool succeeded);
+                           const std::string& transport, utils::ServiceOutcome outcome);
 
   // --- Diagnostics ---
   void checkAgentServiceStatus(diagnostic_updater::DiagnosticStatusWrapper& stat,

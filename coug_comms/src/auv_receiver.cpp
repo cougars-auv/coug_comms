@@ -19,6 +19,7 @@
 namespace coug_comms {
 
 using utils::MsgId;
+using utils::ServiceOutcome;
 
 AuvReceiverNode::AuvReceiverNode(const rclcpp::NodeOptions& options)
     : Node("auv_receiver_node", options), diagnostic_updater_(this) {
@@ -92,7 +93,7 @@ void AuvReceiverNode::callService(rclcpp::Client<std_srvs::srv::Trigger>::Shared
   const std::string service = utils::toString(cmd);
   if (!client->service_is_ready()) {
     RCLCPP_ERROR(get_logger(), "Service not available: %s", service.c_str());
-    recordServiceResult(service, "ACOUSTIC", false);
+    recordServiceResult(service, "ACOUSTIC", ServiceOutcome::FAILED);
     return;
   }
   client->async_send_request(
@@ -104,7 +105,8 @@ void AuvReceiverNode::callService(rclcpp::Client<std_srvs::srv::Trigger>::Shared
         } catch (const std::exception& e) {
           RCLCPP_ERROR(get_logger(), "Service call failed: %s; %s", service.c_str(), e.what());
         }
-        recordServiceResult(service, "ACOUSTIC", success);
+        recordServiceResult(service, "ACOUSTIC",
+                            success ? ServiceOutcome::SUCCEEDED : ServiceOutcome::FAILED);
         if (success) {
           RCLCPP_INFO(get_logger(), "Service call succeeded: %s", service.c_str());
         } else {
@@ -114,8 +116,8 @@ void AuvReceiverNode::callService(rclcpp::Client<std_srvs::srv::Trigger>::Shared
 }
 
 void AuvReceiverNode::recordServiceResult(const std::string& service, const std::string& transport,
-                                          bool succeeded) {
-  service_history_.push_back({service, transport, succeeded});
+                                          ServiceOutcome outcome) {
+  service_history_.push_back({service, transport, outcome});
   if (service_history_.size() > static_cast<size_t>(params_.service_history_size)) {
     service_history_.pop_front();
   }
@@ -129,16 +131,16 @@ void AuvReceiverNode::checkServiceStatus(diagnostic_updater::DiagnosticStatusWra
 
   std::string history_str;
   for (auto it = service_history_.rbegin(); it != service_history_.rend(); ++it) {
-    history_str += "\n" + it->service + " (" + it->transport + ")" +
-                   (it->succeeded ? ": succeeded" : ": failed");
+    history_str += "\n" + it->service + " (" + it->transport + "): " + utils::toString(it->outcome);
   }
   stat.add("Service History", history_str);
 
   const ServiceResult& latest = service_history_.back();
-  if (latest.succeeded) {
-    stat.summary(diagnostic_msgs::msg::DiagnosticStatus::OK, latest.service + " succeeded.");
+  const std::string summary = latest.service + " " + utils::toString(latest.outcome) + ".";
+  if (latest.outcome == ServiceOutcome::FAILED) {
+    stat.summary(diagnostic_msgs::msg::DiagnosticStatus::ERROR, summary);
   } else {
-    stat.summary(diagnostic_msgs::msg::DiagnosticStatus::ERROR, latest.service + " failed.");
+    stat.summary(diagnostic_msgs::msg::DiagnosticStatus::OK, summary);
   }
 }
 

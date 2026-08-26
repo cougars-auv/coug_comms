@@ -24,6 +24,7 @@
 
 #include "coug_comms/auv_receiver_parameters.hpp"
 #include "coug_comms/utils/protocol_enums.hpp"
+#include "coug_comms/utils/service_enums.hpp"
 
 namespace coug_comms {
 
@@ -35,7 +36,7 @@ class AuvReceiverNode : public rclcpp::Node {
   struct ServiceResult {
     std::string service;
     std::string transport;
-    bool succeeded;
+    utils::ServiceOutcome outcome;
   };
 
   // --- Callbacks ---
@@ -45,7 +46,7 @@ class AuvReceiverNode : public rclcpp::Node {
   void callService(rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr client, utils::MsgId cmd);
 
   void recordServiceResult(const std::string& service, const std::string& transport,
-                           bool succeeded);
+                           utils::ServiceOutcome outcome);
 
   // --- Diagnostics ---
   void checkServiceStatus(diagnostic_updater::DiagnosticStatusWrapper& stat);

@@ -23,6 +23,7 @@ namespace coug_comms {
 using utils::CID_DAT_SEND;
 using utils::MSG_OWAY;
 using utils::MsgId;
+using utils::ServiceOutcome;
 
 BaseDispatcherNode::BaseDispatcherNode(const rclcpp::NodeOptions& options)
     : Node("base_dispatcher_node", options), diagnostic_updater_(this) {
@@ -133,7 +134,7 @@ void BaseDispatcherNode::handleServiceRequest(
   res.message = service + " failed: comms disabled.";
   service_handle->send_response(*header, res);
   RCLCPP_ERROR(get_logger(), "%s", res.message.c_str());
-  recordServiceResult(beacon_id, service, "NONE", false);
+  recordServiceResult(beacon_id, service, "NONE", ServiceOutcome::FAILED);
 }
 
 bool BaseDispatcherNode::directServiceDispatch(
@@ -170,7 +171,8 @@ bool BaseDispatcherNode::directServiceDispatch(
         } else {
           RCLCPP_WARN(get_logger(), "%s", res.message.c_str());
         }
-        recordServiceResult(beacon_id, service, "DIRECT", success);
+        recordServiceResult(beacon_id, service, "DIRECT",
+                            success ? ServiceOutcome::SUCCEEDED : ServiceOutcome::FAILED);
       });
   return true;
 }
@@ -193,13 +195,13 @@ void BaseDispatcherNode::acousticServiceDispatch(
   res.message = service + " queued (acomms).";
   service_handle->send_response(*header, res);
   RCLCPP_INFO(get_logger(), "%s", res.message.c_str());
-  recordServiceResult(agent.beacon_id, service, "ACOUSTIC", true);
+  recordServiceResult(agent.beacon_id, service, "ACOUSTIC", ServiceOutcome::QUEUED);
 }
 
 void BaseDispatcherNode::recordServiceResult(uint8_t beacon_id, const std::string& service,
-                                             const std::string& transport, bool succeeded) {
+                                             const std::string& transport, ServiceOutcome outcome) {
   AgentEntry& agent = agents_.at(beacon_id);
-  agent.service_history.push_back({service, transport, succeeded});
+  agent.service_history.push_back({service, transport, outcome});
   if (agent.service_history.size() > static_cast<size_t>(params_.service_history_size)) {
     agent.service_history.pop_front();
   }
@@ -221,16 +223,16 @@ void BaseDispatcherNode::checkAgentServiceStatus(diagnostic_updater::DiagnosticS
 
   std::string history_str;
   for (auto it = agent.service_history.rbegin(); it != agent.service_history.rend(); ++it) {
-    history_str += "\n" + it->service + " (" + it->transport + ")" +
-                   (it->succeeded ? ": succeeded" : ": failed");
+    history_str += "\n" + it->service + " (" + it->transport + "): " + utils::toString(it->outcome);
   }
   stat.add("Service History", history_str);
 
   const ServiceResult& latest = agent.service_history.back();
-  if (latest.succeeded) {
-    stat.summary(diagnostic_msgs::msg::DiagnosticStatus::OK, latest.service + " succeeded.");
+  const std::string summary = latest.service + " " + utils::toString(latest.outcome) + ".";
+  if (latest.outcome == ServiceOutcome::FAILED) {
+    stat.summary(diagnostic_msgs::msg::DiagnosticStatus::ERROR, summary);
   } else {
-    stat.summary(diagnostic_msgs::msg::DiagnosticStatus::ERROR, latest.service + " failed.");
+    stat.summary(diagnostic_msgs::msg::DiagnosticStatus::OK, summary);
   }
 }
 
