@@ -74,5 +74,4 @@ jobs:
           token: ${{ secrets.GH_TOKEN }}
           repository: ${{ env.UPSTREAM_REPO }}
           event-type: ros2_dispatch
-          client-payload: '{"repo": "${{ github.repository }}", "sha": "${{
-            github.sha }}"}'
+          client-payload: '{"repo": "${{ github.repository }}", "sha": "${{ github.sha }}"}'
