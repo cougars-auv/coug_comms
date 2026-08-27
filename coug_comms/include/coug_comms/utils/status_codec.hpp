@@ -164,7 +164,7 @@ class PayloadCursor {
 
 inline uint8_t encodeStatus(const coug_interfaces::msg::AgentStatus& status, DatPayload& payload) {
   PayloadCursor cursor;
-  cursor.put<uint8_t>(payload, static_cast<uint8_t>(MsgId::RESP_STATUS));
+  cursor.put<uint8_t>(payload, static_cast<uint8_t>(MsgId::kStatusResponse));
 
   const auto& pose = status.local_odometry;
   cursor.put(payload, encodeMeters(pose.position.x));
@@ -187,7 +187,7 @@ inline bool decodeStatus(const DatPayload& payload, uint8_t packet_len,
                          coug_interfaces::msg::AgentStatus& status) {
   if (packet_len < kStatusPacketLen) return false;
   PayloadCursor cursor;
-  if (cursor.get<uint8_t>(payload) != static_cast<uint8_t>(MsgId::RESP_STATUS)) return false;
+  if (cursor.get<uint8_t>(payload) != static_cast<uint8_t>(MsgId::kStatusResponse)) return false;
 
   auto& pose = status.local_odometry;
   pose.position.x = decodeMeters(cursor.get<int16_t>(payload));

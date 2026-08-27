@@ -59,22 +59,22 @@ void AuvReceiverNode::modemRecCallback(const seatrac_interfaces::msg::ModemRec::
   const auto msg_id = static_cast<MsgId>(msg->packet_data[0]);
   rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr client;
   switch (msg_id) {
-    case MsgId::SRV_START:
+    case MsgId::kServiceStart:
       client = start_client_;
       break;
-    case MsgId::SRV_STOP:
+    case MsgId::kServiceStop:
       client = stop_client_;
       break;
-    case MsgId::SRV_SURFACE:
+    case MsgId::kServiceSurface:
       client = surface_client_;
       break;
-    case MsgId::SRV_HOME:
+    case MsgId::kServiceHome:
       client = home_client_;
       break;
-    case MsgId::SRV_EMERGENCY_STOP:
+    case MsgId::kEmergencyStop:
       client = emergency_stop_client_;
       break;
-    case MsgId::SRV_EMERGENCY_SURFACE:
+    case MsgId::kEmergencySurface:
       client = emergency_surface_client_;
       break;
     default:
@@ -91,7 +91,7 @@ void AuvReceiverNode::callService(rclcpp::Client<std_srvs::srv::Trigger>::Shared
   const std::string service = utils::toString(msg);
   if (!client->service_is_ready()) {
     RCLCPP_ERROR(get_logger(), "Service not available: %s", service.c_str());
-    recordServiceResult(service, "ACOUSTIC", ServiceOutcome::FAILED);
+    recordServiceResult(service, "ACOUSTIC", ServiceOutcome::kFailed);
     return;
   }
   client->async_send_request(
@@ -104,7 +104,7 @@ void AuvReceiverNode::callService(rclcpp::Client<std_srvs::srv::Trigger>::Shared
           RCLCPP_ERROR(get_logger(), "Service call failed: %s; %s", service.c_str(), e.what());
         }
         recordServiceResult(service, "ACOUSTIC",
-                            success ? ServiceOutcome::SUCCEEDED : ServiceOutcome::FAILED);
+                            success ? ServiceOutcome::kSucceeded : ServiceOutcome::kFailed);
         if (success) {
           RCLCPP_INFO(get_logger(), "Service call succeeded: %s", service.c_str());
         } else {
@@ -135,7 +135,7 @@ void AuvReceiverNode::checkServiceStatus(diagnostic_updater::DiagnosticStatusWra
 
   const ServiceResult& latest = service_history_.back();
   const std::string summary = latest.service + " " + utils::toString(latest.outcome) + ".";
-  if (latest.outcome == ServiceOutcome::FAILED) {
+  if (latest.outcome == ServiceOutcome::kFailed) {
     stat.summary(diagnostic_msgs::msg::DiagnosticStatus::ERROR, summary);
   } else {
     stat.summary(diagnostic_msgs::msg::DiagnosticStatus::OK, summary);

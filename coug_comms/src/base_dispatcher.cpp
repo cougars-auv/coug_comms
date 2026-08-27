@@ -45,14 +45,14 @@ BaseDispatcherNode::BaseDispatcherNode(const rclcpp::NodeOptions& options)
       params_.modem_send_topic, rclcpp::SystemDefaultsQoS());
 
   services_ = {
-      {params_.start_service, params_.direct_start_service, MsgId::SRV_START},
-      {params_.stop_service, params_.direct_stop_service, MsgId::SRV_STOP},
-      {params_.surface_service, params_.direct_surface_service, MsgId::SRV_SURFACE},
-      {params_.home_service, params_.direct_home_service, MsgId::SRV_HOME},
+      {params_.start_service, params_.direct_start_service, MsgId::kServiceStart},
+      {params_.stop_service, params_.direct_stop_service, MsgId::kServiceStop},
+      {params_.surface_service, params_.direct_surface_service, MsgId::kServiceSurface},
+      {params_.home_service, params_.direct_home_service, MsgId::kServiceHome},
       {params_.emergency_stop_service, params_.direct_emergency_stop_service,
-       MsgId::SRV_EMERGENCY_STOP},
+       MsgId::kEmergencyStop},
       {params_.emergency_surface_service, params_.direct_emergency_surface_service,
-       MsgId::SRV_EMERGENCY_SURFACE},
+       MsgId::kEmergencySurface},
   };
 
   std::string prefix;
@@ -139,7 +139,7 @@ void BaseDispatcherNode::handleServiceRequest(
   res.message = service + " failed: comms disabled.";
   service_handle->send_response(*header, res);
   RCLCPP_ERROR(get_logger(), "%s", res.message.c_str());
-  recordServiceResult(beacon_id, service, "NONE", ServiceOutcome::FAILED);
+  recordServiceResult(beacon_id, service, "NONE", ServiceOutcome::kFailed);
 }
 
 bool BaseDispatcherNode::directServiceDispatch(
@@ -177,7 +177,7 @@ bool BaseDispatcherNode::directServiceDispatch(
           RCLCPP_WARN(get_logger(), "%s", res.message.c_str());
         }
         recordServiceResult(beacon_id, service, "DIRECT",
-                            success ? ServiceOutcome::SUCCEEDED : ServiceOutcome::FAILED);
+                            success ? ServiceOutcome::kSucceeded : ServiceOutcome::kFailed);
       });
   return true;
 }
@@ -200,7 +200,7 @@ void BaseDispatcherNode::acousticServiceDispatch(
   res.message = service + " queued (acomms).";
   service_handle->send_response(*header, res);
   RCLCPP_INFO(get_logger(), "%s", res.message.c_str());
-  recordServiceResult(agent.beacon_id, service, "ACOUSTIC", ServiceOutcome::QUEUED);
+  recordServiceResult(agent.beacon_id, service, "ACOUSTIC", ServiceOutcome::kQueued);
 }
 
 void BaseDispatcherNode::recordServiceResult(uint8_t beacon_id, const std::string& service,
@@ -234,7 +234,7 @@ void BaseDispatcherNode::checkAgentServiceStatus(diagnostic_updater::DiagnosticS
 
   const ServiceResult& latest = agent.service_history.back();
   const std::string summary = latest.service + " " + utils::toString(latest.outcome) + ".";
-  if (latest.outcome == ServiceOutcome::FAILED) {
+  if (latest.outcome == ServiceOutcome::kFailed) {
     stat.summary(diagnostic_msgs::msg::DiagnosticStatus::ERROR, summary);
   } else {
     stat.summary(diagnostic_msgs::msg::DiagnosticStatus::OK, summary);

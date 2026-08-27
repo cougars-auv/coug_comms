@@ -205,7 +205,7 @@ void BaseStatusPollerNode::sendAcousticPoll(AgentEntry& agent) {
   send_msg.dest_id = agent.beacon_id;
   send_msg.msg_type = MSG_REQX;
   send_msg.packet_len = 1;
-  send_msg.packet_data[0] = static_cast<uint8_t>(MsgId::REQ_STATUS);
+  send_msg.packet_data[0] = static_cast<uint8_t>(MsgId::kStatusRequest);
   modem_send_pub_->publish(send_msg);
 
   awaiting_response_ = true;

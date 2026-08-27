@@ -20,33 +20,33 @@
 namespace coug_comms::utils {
 
 enum class MsgId : uint8_t {
-  SRV_START = 0x10,
-  SRV_STOP = 0x11,
-  SRV_SURFACE = 0x12,
-  SRV_HOME = 0x13,
-  SRV_EMERGENCY_STOP = 0x14,
-  SRV_EMERGENCY_SURFACE = 0x15,
-  REQ_STATUS = 0x30,
-  RESP_STATUS = 0x31,
+  kServiceStart = 0x10,
+  kServiceStop = 0x11,
+  kServiceSurface = 0x12,
+  kServiceHome = 0x13,
+  kEmergencyStop = 0x14,
+  kEmergencySurface = 0x15,
+  kStatusRequest = 0x30,
+  kStatusResponse = 0x31,
 };
 
 inline std::string toString(MsgId msg) {
   switch (msg) {
-    case MsgId::SRV_START:
+    case MsgId::kServiceStart:
       return "SRV_START";
-    case MsgId::SRV_STOP:
+    case MsgId::kServiceStop:
       return "SRV_STOP";
-    case MsgId::SRV_SURFACE:
+    case MsgId::kServiceSurface:
       return "SRV_SURFACE";
-    case MsgId::SRV_HOME:
+    case MsgId::kServiceHome:
       return "SRV_HOME";
-    case MsgId::SRV_EMERGENCY_STOP:
+    case MsgId::kEmergencyStop:
       return "SRV_EMERGENCY_STOP";
-    case MsgId::SRV_EMERGENCY_SURFACE:
+    case MsgId::kEmergencySurface:
       return "SRV_EMERGENCY_SURFACE";
-    case MsgId::REQ_STATUS:
+    case MsgId::kStatusRequest:
       return "REQ_STATUS";
-    case MsgId::RESP_STATUS:
+    case MsgId::kStatusResponse:
       return "RESP_STATUS";
   }
   return "UNKNOWN";

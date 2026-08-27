@@ -19,18 +19,18 @@
 namespace coug_comms::utils {
 
 enum class ServiceOutcome {
-  SUCCEEDED = 0,
-  FAILED,
-  QUEUED,
+  kSucceeded = 0,
+  kFailed,
+  kQueued,
 };
 
 inline std::string toString(ServiceOutcome outcome) {
   switch (outcome) {
-    case ServiceOutcome::SUCCEEDED:
+    case ServiceOutcome::kSucceeded:
       return "SUCCEEDED";
-    case ServiceOutcome::FAILED:
+    case ServiceOutcome::kFailed:
       return "FAILED";
-    case ServiceOutcome::QUEUED:
+    case ServiceOutcome::kQueued:
       return "QUEUED";
   }
   return "UNKNOWN";
