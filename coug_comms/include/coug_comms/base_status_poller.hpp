@@ -40,7 +40,7 @@ class BaseStatusPollerNode : public rclcpp::Node {
   struct AgentEntry {
     std::string name;
     uint8_t beacon_id;
-    bool is_lead = false;
+    bool is_lead;
     rclcpp::Publisher<coug_interfaces::msg::AgentStatus>::SharedPtr status_pub;
     rclcpp::Subscription<coug_interfaces::msg::AgentStatus>::SharedPtr direct_status_sub;
     size_t responses = 0;

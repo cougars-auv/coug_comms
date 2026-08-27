@@ -50,7 +50,7 @@ class BaseDispatcherNode : public rclcpp::Node {
 
   struct AgentEntry {
     uint8_t beacon_id;
-    bool is_lead = false;
+    bool is_lead;
     std::vector<rclcpp::ServiceBase::SharedPtr> services;
     std::unordered_map<uint8_t, rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr> direct_clients;
     std::deque<ServiceResult> service_history;
