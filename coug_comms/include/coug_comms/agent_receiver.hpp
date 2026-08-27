@@ -28,9 +28,9 @@
 
 namespace coug_comms {
 
-class AuvReceiverNode : public rclcpp::Node {
+class AgentReceiverNode : public rclcpp::Node {
  public:
-  explicit AuvReceiverNode(const rclcpp::NodeOptions& options);
+  explicit AgentReceiverNode(const rclcpp::NodeOptions& options);
 
  private:
   struct ServiceResult {

@@ -23,9 +23,9 @@
 
 namespace coug_comms {
 
-class AuvStatusStagerNode : public rclcpp::Node {
+class AgentStatusStagerNode : public rclcpp::Node {
  public:
-  explicit AuvStatusStagerNode(const rclcpp::NodeOptions& options);
+  explicit AgentStatusStagerNode(const rclcpp::NodeOptions& options);
 
  private:
   // --- Callbacks ---

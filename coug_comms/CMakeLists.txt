@@ -47,9 +47,9 @@ target_link_libraries(coug_comms_component
 )
 
 rclcpp_components_register_nodes(coug_comms_component
-  "coug_comms::AuvReceiverNode"
-  "coug_comms::AuvStatusBundlerNode"
-  "coug_comms::AuvStatusStagerNode"
+  "coug_comms::AgentReceiverNode"
+  "coug_comms::AgentStatusBundlerNode"
+  "coug_comms::AgentStatusStagerNode"
   "coug_comms::BaseDispatcherNode"
   "coug_comms::BaseStatusExtractorNode"
   "coug_comms::BaseStatusPollerNode"

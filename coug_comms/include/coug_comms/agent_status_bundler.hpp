@@ -27,9 +27,9 @@
 
 namespace coug_comms {
 
-class AuvStatusBundlerNode : public rclcpp::Node {
+class AgentStatusBundlerNode : public rclcpp::Node {
  public:
-  explicit AuvStatusBundlerNode(const rclcpp::NodeOptions& options);
+  explicit AgentStatusBundlerNode(const rclcpp::NodeOptions& options);
 
  private:
   // --- Callbacks ---

@@ -20,7 +20,7 @@
 
 namespace coug_comms {
 
-AuvStatusBundlerNode::AuvStatusBundlerNode(const rclcpp::NodeOptions& options)
+AgentStatusBundlerNode::AgentStatusBundlerNode(const rclcpp::NodeOptions& options)
     : Node("agent_status_bundler_node", options) {
   param_listener_ =
       std::make_shared<agent_status_bundler_node::ParamListener>(get_node_parameters_interface());
@@ -31,15 +31,15 @@ AuvStatusBundlerNode::AuvStatusBundlerNode(const rclcpp::NodeOptions& options)
 
   odom_sub_ = create_subscription<nav_msgs::msg::Odometry>(
       params_.odom_topic, rclcpp::SystemDefaultsQoS(),
-      std::bind(&AuvStatusBundlerNode::odomCallback, this, std::placeholders::_1));
+      std::bind(&AgentStatusBundlerNode::odomCallback, this, std::placeholders::_1));
 
   depth_sub_ = create_subscription<nav_msgs::msg::Odometry>(
       params_.depth_topic, rclcpp::SystemDefaultsQoS(),
-      std::bind(&AuvStatusBundlerNode::depthCallback, this, std::placeholders::_1));
+      std::bind(&AgentStatusBundlerNode::depthCallback, this, std::placeholders::_1));
 
   imu_sub_ = create_subscription<sensor_msgs::msg::Imu>(
       params_.imu_topic, rclcpp::SystemDefaultsQoS(),
-      std::bind(&AuvStatusBundlerNode::imuCallback, this, std::placeholders::_1));
+      std::bind(&AgentStatusBundlerNode::imuCallback, this, std::placeholders::_1));
 
   status_pub_ = create_publisher<coug_interfaces::msg::AgentStatus>(params_.status_topic,
                                                                     rclcpp::SystemDefaultsQoS());
@@ -47,20 +47,20 @@ AuvStatusBundlerNode::AuvStatusBundlerNode(const rclcpp::NodeOptions& options)
   RCLCPP_INFO(get_logger(), "Initialization complete.");
 }
 
-void AuvStatusBundlerNode::odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg) {
+void AgentStatusBundlerNode::odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg) {
   last_odom_ = msg;
   publishStatus();
 }
 
-void AuvStatusBundlerNode::depthCallback(const nav_msgs::msg::Odometry::SharedPtr msg) {
+void AgentStatusBundlerNode::depthCallback(const nav_msgs::msg::Odometry::SharedPtr msg) {
   last_depth_ = msg;
 }
 
-void AuvStatusBundlerNode::imuCallback(const sensor_msgs::msg::Imu::SharedPtr msg) {
+void AgentStatusBundlerNode::imuCallback(const sensor_msgs::msg::Imu::SharedPtr msg) {
   last_imu_ = msg;
 }
 
-void AuvStatusBundlerNode::publishStatus() {
+void AgentStatusBundlerNode::publishStatus() {
   if (!last_odom_) return;
 
   coug_interfaces::msg::AgentStatus status;
@@ -141,4 +141,4 @@ void AuvStatusBundlerNode::publishStatus() {
 
 }  // namespace coug_comms
 
-RCLCPP_COMPONENTS_REGISTER_NODE(coug_comms::AuvStatusBundlerNode)
+RCLCPP_COMPONENTS_REGISTER_NODE(coug_comms::AgentStatusBundlerNode)

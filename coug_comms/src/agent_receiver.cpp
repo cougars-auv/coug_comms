@@ -21,7 +21,7 @@ namespace coug_comms {
 using utils::MsgId;
 using utils::ServiceOutcome;
 
-AuvReceiverNode::AuvReceiverNode(const rclcpp::NodeOptions& options)
+AgentReceiverNode::AgentReceiverNode(const rclcpp::NodeOptions& options)
     : Node("agent_receiver_node", options), diagnostic_updater_(this) {
   param_listener_ =
       std::make_shared<agent_receiver_node::ParamListener>(get_node_parameters_interface());
@@ -29,7 +29,7 @@ AuvReceiverNode::AuvReceiverNode(const rclcpp::NodeOptions& options)
 
   modem_rec_sub_ = create_subscription<seatrac_interfaces::msg::ModemRec>(
       params_.modem_rec_topic, rclcpp::SystemDefaultsQoS(),
-      std::bind(&AuvReceiverNode::modemRecCallback, this, std::placeholders::_1));
+      std::bind(&AgentReceiverNode::modemRecCallback, this, std::placeholders::_1));
 
   start_client_ = create_client<std_srvs::srv::Trigger>(params_.start_service);
   stop_client_ = create_client<std_srvs::srv::Trigger>(params_.stop_service);
@@ -47,13 +47,13 @@ AuvReceiverNode::AuvReceiverNode(const rclcpp::NodeOptions& options)
     std::string prefix = clean_ns.empty() ? "" : "[" + clean_ns + "] ";
 
     std::string service_task = prefix + "Service Status";
-    diagnostic_updater_.add(service_task, this, &AuvReceiverNode::checkServiceStatus);
+    diagnostic_updater_.add(service_task, this, &AgentReceiverNode::checkServiceStatus);
   }
 
   RCLCPP_INFO(get_logger(), "Initialization complete.");
 }
 
-void AuvReceiverNode::modemRecCallback(const seatrac_interfaces::msg::ModemRec::SharedPtr msg) {
+void AgentReceiverNode::modemRecCallback(const seatrac_interfaces::msg::ModemRec::SharedPtr msg) {
   if (!msg->local_flag || msg->packet_len < 1) return;
 
   const auto msg_id = static_cast<MsgId>(msg->packet_data[0]);
@@ -86,8 +86,8 @@ void AuvReceiverNode::modemRecCallback(const seatrac_interfaces::msg::ModemRec::
   callService(client, msg_id);
 }
 
-void AuvReceiverNode::callService(rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr client,
-                                  MsgId msg) {
+void AgentReceiverNode::callService(rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr client,
+                                    MsgId msg) {
   const std::string service = utils::toString(msg);
   if (!client->service_is_ready()) {
     RCLCPP_ERROR(get_logger(), "Service not available: %s", service.c_str());
@@ -113,15 +113,15 @@ void AuvReceiverNode::callService(rclcpp::Client<std_srvs::srv::Trigger>::Shared
       });
 }
 
-void AuvReceiverNode::recordServiceResult(const std::string& service, const std::string& transport,
-                                          ServiceOutcome outcome) {
+void AgentReceiverNode::recordServiceResult(const std::string& service,
+                                            const std::string& transport, ServiceOutcome outcome) {
   service_history_.push_back({service, transport, outcome});
   if (service_history_.size() > static_cast<size_t>(params_.service_history_size)) {
     service_history_.pop_front();
   }
 }
 
-void AuvReceiverNode::checkServiceStatus(diagnostic_updater::DiagnosticStatusWrapper& stat) {
+void AgentReceiverNode::checkServiceStatus(diagnostic_updater::DiagnosticStatusWrapper& stat) {
   if (service_history_.empty()) {
     stat.summary(diagnostic_msgs::msg::DiagnosticStatus::OK, "Waiting for first service.");
     return;
@@ -144,4 +144,4 @@ void AuvReceiverNode::checkServiceStatus(diagnostic_updater::DiagnosticStatusWra
 
 }  // namespace coug_comms
 
-RCLCPP_COMPONENTS_REGISTER_NODE(coug_comms::AuvReceiverNode)
+RCLCPP_COMPONENTS_REGISTER_NODE(coug_comms::AgentReceiverNode)
