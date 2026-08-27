@@ -1,5 +1,4 @@
 auv_receiver_node:
-  # --- Node Settings ---
   publish_diagnostics:
     type: bool
     default_value: false
@@ -8,14 +7,11 @@ auv_receiver_node:
     default_value: 5
     validation:
       gt<>: [0]
-
-  # --- ROS Topics and Services ---
   modem_rec_topic:
     type: string
     default_value: "modem_rec"
     validation:
       not_empty<>: []
-
   start_service:
     type: string
     default_value: "start"

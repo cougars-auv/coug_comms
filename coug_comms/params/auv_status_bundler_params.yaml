@@ -1,5 +1,4 @@
 auv_status_bundler_node:
-  # --- ROS Topics and Frames ---
   status_topic:
     type: string
     default_value: "agent/status"
@@ -20,7 +19,6 @@ auv_status_bundler_node:
     default_value: "seatrac/imu/data"
     validation:
       not_empty<>: []
-
   base_frame:
     type: string
     default_value: "base_link"

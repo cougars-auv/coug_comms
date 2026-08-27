@@ -10,13 +10,11 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
-# --- Dependencies ---
 find_package(ament_cmake_auto REQUIRED)
 ament_auto_find_build_dependencies()
 
 find_package(Eigen3 REQUIRED)
 
-# --- Nodes ---
 set(COUG_COMMS_NODES
   auv_receiver
   auv_status_bundler
@@ -26,7 +24,6 @@ set(COUG_COMMS_NODES
   base_status_poller
 )
 
-# --- Parameters ---
 set(COUG_COMMS_NODE_SOURCES "")
 set(COUG_COMMS_PARAM_LIBRARIES "")
 foreach(node IN LISTS COUG_COMMS_NODES)
@@ -38,7 +35,6 @@ foreach(node IN LISTS COUG_COMMS_NODES)
   list(APPEND COUG_COMMS_PARAM_LIBRARIES "${node}_parameters")
 endforeach()
 
-# --- Component Library ---
 ament_auto_add_library(coug_comms_component SHARED NO_TARGET_LINK_LIBRARIES
   ${COUG_COMMS_NODE_SOURCES}
 )
@@ -59,13 +55,11 @@ rclcpp_components_register_nodes(coug_comms_component
   "coug_comms::BaseStatusPollerNode"
 )
 
-# --- Executables ---
 foreach(node IN LISTS COUG_COMMS_NODES)
   ament_auto_add_executable(${node} NO_TARGET_LINK_LIBRARIES "src/${node}_node.cpp")
   target_link_libraries(${node} coug_comms_component)
 endforeach()
 
-# --- Testing ---
 if(BUILD_TESTING)
   find_package(ament_cmake_gtest REQUIRED)
 

@@ -1,5 +1,4 @@
 auv_status_stager_node:
-  # --- ROS Topics ---
   modem_send_topic:
     type: string
     default_value: "modem_send"

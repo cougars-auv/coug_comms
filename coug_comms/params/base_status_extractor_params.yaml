@@ -1,5 +1,4 @@
 base_status_extractor_node:
-  # --- ROS Topics ---
   status_topic:
     type: string
     default_value: "base/agent/status"

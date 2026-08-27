@@ -1,5 +1,4 @@
 base_status_poller_node:
-  # --- Node Settings ---
   publish_diagnostics:
     type: bool
     default_value: false
@@ -8,7 +7,6 @@ base_status_poller_node:
     default_value: 10.0
     validation:
       gt<>: [0.0]
-
   lead_agent:
     type: string
     default_value: ""
@@ -38,8 +36,6 @@ base_status_poller_node:
     default_value: 5.0
     validation:
       gt<>: [0.0]
-
-  # --- ROS Topics and Frames ---
   modem_send_topic:
     type: string
     default_value: "modem_send"
@@ -55,7 +51,6 @@ base_status_poller_node:
     default_value: "modem_cmd_update"
     validation:
       not_empty<>: []
-
   status_topic:
     type: string
     default_value: "base/agent/status"
@@ -66,7 +61,6 @@ base_status_poller_node:
     default_value: "agent/status"
     validation:
       not_empty<>: []
-
   use_parameter_frame:
     type: bool
     default_value: false

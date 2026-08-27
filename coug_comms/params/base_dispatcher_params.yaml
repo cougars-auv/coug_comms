@@ -1,5 +1,4 @@
 base_dispatcher_node:
-  # --- Node Settings ---
   publish_diagnostics:
     type: bool
     default_value: false
@@ -8,7 +7,6 @@ base_dispatcher_node:
     default_value: 5
     validation:
       gt<>: [0]
-
   lead_agent:
     type: string
     default_value: ""
@@ -23,14 +21,11 @@ base_dispatcher_node:
     default_value: 2.0
     validation:
       gt<>: [0.0]
-
-  # --- ROS Topics and Services ---
   modem_send_topic:
     type: string
     default_value: "modem_send"
     validation:
       not_empty<>: []
-
   start_service:
     type: string
     default_value: "base/start"
@@ -61,7 +56,6 @@ base_dispatcher_node:
     default_value: "base/emergency_surface"
     validation:
       not_empty<>: []
-
   direct_status_topic:
     type: string
     default_value: "agent/status"
