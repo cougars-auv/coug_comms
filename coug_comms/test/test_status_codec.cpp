@@ -34,12 +34,12 @@ constexpr double kVarianceTol = 0.001;  // 2x margin on float16's ~0.05% worst-c
 
 geometry_msgs::msg::Quaternion makeQuat(double x, double y, double z, double w) {
   const double norm = std::sqrt(x * x + y * y + z * z + w * w);
-  geometry_msgs::msg::Quaternion quat;
-  quat.x = x / norm;
-  quat.y = y / norm;
-  quat.z = z / norm;
-  quat.w = w / norm;
-  return quat;
+  geometry_msgs::msg::Quaternion q;
+  q.x = x / norm;
+  q.y = y / norm;
+  q.z = z / norm;
+  q.w = w / norm;
+  return q;
 }
 
 void expectQuatNear(const geometry_msgs::msg::Quaternion& actual,

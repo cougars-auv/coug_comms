@@ -85,28 +85,28 @@ inline double decodeVariance(uint16_t bits) {
   return sanitizeVariance(static_cast<double>(static_cast<float>(half)));
 }
 
-inline uint32_t encodeQuaternion(const geometry_msgs::msg::Quaternion& quat) {
-  double quat_xyzw[4] = {quat.x, quat.y, quat.z, quat.w};
-  double norm = std::sqrt(quat_xyzw[0] * quat_xyzw[0] + quat_xyzw[1] * quat_xyzw[1] +
-                          quat_xyzw[2] * quat_xyzw[2] + quat_xyzw[3] * quat_xyzw[3]);
+inline uint32_t encodeQuaternion(const geometry_msgs::msg::Quaternion& q) {
+  double q_vec[4] = {q.x, q.y, q.z, q.w};
+  double norm = std::sqrt(q_vec[0] * q_vec[0] + q_vec[1] * q_vec[1] + q_vec[2] * q_vec[2] +
+                          q_vec[3] * q_vec[3]);
   if (!std::isfinite(norm) || norm < 1.0e-9) {
-    quat_xyzw[0] = quat_xyzw[1] = quat_xyzw[2] = 0.0;
-    quat_xyzw[3] = norm = 1.0;
+    q_vec[0] = q_vec[1] = q_vec[2] = 0.0;
+    q_vec[3] = norm = 1.0;
   }
 
   int largest_idx = 0;
   for (int i = 1; i < 4; ++i) {
-    if (std::fabs(quat_xyzw[i]) > std::fabs(quat_xyzw[largest_idx])) largest_idx = i;
+    if (std::fabs(q_vec[i]) > std::fabs(q_vec[largest_idx])) largest_idx = i;
   }
-  const double sign = (quat_xyzw[largest_idx] < 0.0) ? -1.0 : 1.0;
-  for (double& component : quat_xyzw) component = component * sign / norm;
+  const double sign = (q_vec[largest_idx] < 0.0) ? -1.0 : 1.0;
+  for (double& component : q_vec) component = component * sign / norm;
 
   uint32_t packed = static_cast<uint32_t>(largest_idx) << kQuatSelectorShift;
   for (int i = 0, shift = kQuatSelectorShift; i < 4; ++i) {
     if (i == largest_idx) continue;
     shift -= kQuatBits;
     const auto counts =
-        static_cast<int32_t>(roundClamp(quat_xyzw[i] / kQuatLimit * kQuatMax, -kQuatMax, kQuatMax));
+        static_cast<int32_t>(roundClamp(q_vec[i] / kQuatLimit * kQuatMax, -kQuatMax, kQuatMax));
     packed |= (static_cast<uint32_t>(counts) & (kQuatRange - 1)) << shift;
   }
   return packed;
@@ -115,27 +115,27 @@ inline uint32_t encodeQuaternion(const geometry_msgs::msg::Quaternion& quat) {
 inline geometry_msgs::msg::Quaternion decodeQuaternion(uint32_t packed) {
   const int largest_idx = static_cast<int>(packed >> kQuatSelectorShift);
 
-  double quat_xyzw[4];
+  double q_vec[4];
   double sum_squares = 0.0;
   for (int i = 0, shift = kQuatSelectorShift; i < 4; ++i) {
     if (i == largest_idx) continue;
     shift -= kQuatBits;
     int32_t counts = static_cast<int32_t>((packed >> shift) & (kQuatRange - 1));
     if (counts > kQuatMax) counts -= kQuatRange;  // Sign extend the 10-bit field
-    quat_xyzw[i] = static_cast<double>(counts) / kQuatMax * kQuatLimit;
-    sum_squares += quat_xyzw[i] * quat_xyzw[i];
+    q_vec[i] = static_cast<double>(counts) / kQuatMax * kQuatLimit;
+    sum_squares += q_vec[i] * q_vec[i];
   }
-  quat_xyzw[largest_idx] = std::sqrt(std::max(0.0, 1.0 - sum_squares));
+  q_vec[largest_idx] = std::sqrt(std::max(0.0, 1.0 - sum_squares));
 
   // Already unit length unless the bits arrived corrupted and pushed the sum past one
-  const double norm = std::sqrt(sum_squares + quat_xyzw[largest_idx] * quat_xyzw[largest_idx]);
+  const double norm = std::sqrt(sum_squares + q_vec[largest_idx] * q_vec[largest_idx]);
 
-  geometry_msgs::msg::Quaternion quat;
-  quat.x = quat_xyzw[0] / norm;
-  quat.y = quat_xyzw[1] / norm;
-  quat.z = quat_xyzw[2] / norm;
-  quat.w = quat_xyzw[3] / norm;
-  return quat;
+  geometry_msgs::msg::Quaternion q;
+  q.x = q_vec[0] / norm;
+  q.y = q_vec[1] / norm;
+  q.z = q_vec[2] / norm;
+  q.w = q_vec[3] / norm;
+  return q;
 }
 
 class PayloadCursor {
