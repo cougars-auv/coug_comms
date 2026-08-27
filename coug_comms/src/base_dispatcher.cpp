@@ -41,9 +41,6 @@ BaseDispatcherNode::BaseDispatcherNode(const rclcpp::NodeOptions& options)
       std::make_shared<base_dispatcher_node::ParamListener>(get_node_parameters_interface());
   params_ = param_listener_->get_params();
 
-  this->declare_parameter<std::vector<std::string>>("agent_namespaces", std::vector<std::string>{});
-  const auto agent_namespaces = this->get_parameter("agent_namespaces").as_string_array();
-
   modem_send_pub_ = create_publisher<seatrac_interfaces::msg::ModemSend>(
       params_.modem_send_topic, rclcpp::SystemDefaultsQoS());
 
@@ -66,7 +63,7 @@ BaseDispatcherNode::BaseDispatcherNode(const rclcpp::NodeOptions& options)
     prefix = clean_ns.empty() ? "" : "[" + clean_ns + "] ";
   }
 
-  for (const auto& agent_name : agent_namespaces) {
+  for (const auto& agent_name : params_.agent_namespaces) {
     int raw_id = this->declare_parameter<int>("beacon_ids." + agent_name, -1);
     if (raw_id < 0 || raw_id > kMaxBeaconId) {
       RCLCPP_ERROR(get_logger(), "Missing or invalid beacon_ids.%s (got %d) — skipping '%s'.",

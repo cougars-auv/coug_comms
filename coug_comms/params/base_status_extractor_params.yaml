@@ -1,4 +1,7 @@
 base_status_extractor_node:
+  agent_namespaces:
+    type: string_array
+    default_value: []
   status_topic:
     type: string
     default_value: "base/agent/status"

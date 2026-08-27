@@ -48,9 +48,6 @@ BaseStatusPollerNode::BaseStatusPollerNode(const rclcpp::NodeOptions& options)
       std::make_shared<base_status_poller_node::ParamListener>(get_node_parameters_interface());
   params_ = param_listener_->get_params();
 
-  this->declare_parameter<std::vector<std::string>>("agent_namespaces", std::vector<std::string>{});
-  const auto agent_namespaces = this->get_parameter("agent_namespaces").as_string_array();
-
   tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
 
   modem_rec_sub_ = create_subscription<seatrac_interfaces::msg::ModemRec>(
@@ -72,7 +69,7 @@ BaseStatusPollerNode::BaseStatusPollerNode(const rclcpp::NodeOptions& options)
     prefix = clean_ns.empty() ? "" : "[" + clean_ns + "] ";
   }
 
-  for (const auto& agent_name : agent_namespaces) {
+  for (const auto& agent_name : params_.agent_namespaces) {
     int raw_id = this->declare_parameter<int>("beacon_ids." + agent_name, -1);
     if (raw_id < 0 || raw_id > kMaxBeaconId) {
       RCLCPP_ERROR(get_logger(), "Missing or invalid beacon_ids.%s (got %d) — skipping '%s'.",

@@ -1,4 +1,7 @@
 base_dispatcher_node:
+  agent_namespaces:
+    type: string_array
+    default_value: []
   publish_diagnostics:
     type: bool
     default_value: false

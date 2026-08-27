@@ -35,10 +35,7 @@ BaseStatusExtractorNode::BaseStatusExtractorNode(const rclcpp::NodeOptions& opti
       std::make_shared<base_status_extractor_node::ParamListener>(get_node_parameters_interface());
   params_ = param_listener_->get_params();
 
-  this->declare_parameter<std::vector<std::string>>("agent_namespaces", std::vector<std::string>{});
-  const auto agent_namespaces = this->get_parameter("agent_namespaces").as_string_array();
-
-  for (const auto& agent_name : agent_namespaces) {
+  for (const auto& agent_name : params_.agent_namespaces) {
     registerAgent(agent_name);
   }
 
