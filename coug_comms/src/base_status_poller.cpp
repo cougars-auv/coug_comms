@@ -34,6 +34,11 @@ namespace {
 
 constexpr double kDecimetersToMeters = 0.1;
 constexpr double kSeatracToRad = M_PI / 1800.0;
+constexpr int kMaxBeaconId = 15;
+
+std::string build_name(const std::string& agent, const std::string& sub) {
+  return "/" + agent + "/" + sub;
+}
 
 }  // namespace
 
@@ -46,7 +51,6 @@ BaseStatusPollerNode::BaseStatusPollerNode(const rclcpp::NodeOptions& options)
   this->declare_parameter<std::vector<std::string>>("agent_namespaces", std::vector<std::string>{});
   const auto agent_namespaces = this->get_parameter("agent_namespaces").as_string_array();
 
-  // --- ROS Interfaces ---
   tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
 
   modem_rec_sub_ = create_subscription<seatrac_interfaces::msg::ModemRec>(
@@ -60,7 +64,6 @@ BaseStatusPollerNode::BaseStatusPollerNode(const rclcpp::NodeOptions& options)
   modem_send_pub_ = create_publisher<seatrac_interfaces::msg::ModemSend>(
       params_.modem_send_topic, rclcpp::SystemDefaultsQoS());
 
-  // --- ROS Diagnostics ---
   std::string prefix;
   if (params_.publish_diagnostics) {
     std::string ns = this->get_namespace();
@@ -71,7 +74,7 @@ BaseStatusPollerNode::BaseStatusPollerNode(const rclcpp::NodeOptions& options)
 
   for (const auto& agent_name : agent_namespaces) {
     int raw_id = this->declare_parameter<int>("beacon_ids." + agent_name, -1);
-    if (raw_id < 0 || raw_id > 15) {
+    if (raw_id < 0 || raw_id > kMaxBeaconId) {
       RCLCPP_ERROR(get_logger(), "Missing or invalid beacon_ids.%s (got %d) — skipping '%s'.",
                    agent_name.c_str(), raw_id, agent_name.c_str());
       continue;
@@ -145,12 +148,12 @@ void BaseStatusPollerNode::registerAgent(const std::string& agent_name, uint8_t 
   agent.beacon_id = beacon_id;
   agent.is_lead = (agent_name == params_.lead_agent);
   agent.status_pub = create_publisher<coug_interfaces::msg::AgentStatus>(
-      "/" + agent_name + "/" + params_.status_topic, rclcpp::SystemDefaultsQoS());
+      build_name(agent_name, params_.status_topic), rclcpp::SystemDefaultsQoS());
   agent.last_response_time = now();
 
   if (params_.enable_direct_comms || agent.is_lead) {
     agent.direct_status_sub = create_subscription<coug_interfaces::msg::AgentStatus>(
-        "/" + agent_name + "/" + params_.direct_status_topic, rclcpp::SystemDefaultsQoS(),
+        build_name(agent_name, params_.direct_status_topic), rclcpp::SystemDefaultsQoS(),
         [this, beacon_id](const coug_interfaces::msg::AgentStatus::SharedPtr msg) {
           auto it = agents_.find(beacon_id);
           if (it == agents_.end()) return;

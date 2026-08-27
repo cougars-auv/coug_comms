@@ -25,6 +25,16 @@ using utils::MSG_OWAY;
 using utils::MsgId;
 using utils::ServiceOutcome;
 
+namespace {
+
+constexpr int kMaxBeaconId = 15;
+
+std::string build_name(const std::string& agent, const std::string& sub) {
+  return "/" + agent + "/" + sub;
+}
+
+}  // namespace
+
 BaseDispatcherNode::BaseDispatcherNode(const rclcpp::NodeOptions& options)
     : Node("base_dispatcher_node", options), diagnostic_updater_(this) {
   param_listener_ =
@@ -34,7 +44,6 @@ BaseDispatcherNode::BaseDispatcherNode(const rclcpp::NodeOptions& options)
   this->declare_parameter<std::vector<std::string>>("agent_namespaces", std::vector<std::string>{});
   const auto agent_namespaces = this->get_parameter("agent_namespaces").as_string_array();
 
-  // --- ROS Interfaces ---
   modem_send_pub_ = create_publisher<seatrac_interfaces::msg::ModemSend>(
       params_.modem_send_topic, rclcpp::SystemDefaultsQoS());
 
@@ -49,7 +58,6 @@ BaseDispatcherNode::BaseDispatcherNode(const rclcpp::NodeOptions& options)
        MsgId::SRV_EMERGENCY_SURFACE},
   };
 
-  // --- ROS Diagnostics ---
   std::string prefix;
   if (params_.publish_diagnostics) {
     std::string ns = this->get_namespace();
@@ -60,7 +68,7 @@ BaseDispatcherNode::BaseDispatcherNode(const rclcpp::NodeOptions& options)
 
   for (const auto& agent_name : agent_namespaces) {
     int raw_id = this->declare_parameter<int>("beacon_ids." + agent_name, -1);
-    if (raw_id < 0 || raw_id > 15) {
+    if (raw_id < 0 || raw_id > kMaxBeaconId) {
       RCLCPP_ERROR(get_logger(), "Missing or invalid beacon_ids.%s (got %d) — skipping '%s'.",
                    agent_name.c_str(), raw_id, agent_name.c_str());
       continue;
@@ -80,7 +88,7 @@ void BaseDispatcherNode::registerAgent(const std::string& agent_name, uint8_t be
   for (const auto& spec : services_) {
     const MsgId cmd = spec.cmd;
     agent.services.push_back(create_service<std_srvs::srv::Trigger>(
-        "/" + agent_name + "/" + spec.relay_service,
+        build_name(agent_name, spec.relay_service),
         [this, cmd, beacon_id](
             std::shared_ptr<rclcpp::Service<std_srvs::srv::Trigger>> service_handle,
             std::shared_ptr<rmw_request_id_t> header,
@@ -88,12 +96,12 @@ void BaseDispatcherNode::registerAgent(const std::string& agent_name, uint8_t be
           handleServiceRequest(cmd, beacon_id, service_handle, header);
         }));
     agent.direct_clients[static_cast<uint8_t>(cmd)] =
-        create_client<std_srvs::srv::Trigger>("/" + agent_name + "/" + spec.direct_service);
+        create_client<std_srvs::srv::Trigger>(build_name(agent_name, spec.direct_service));
   }
 
   if (params_.enable_direct_comms || agent.is_lead) {
     agent.direct_status_sub = create_subscription<coug_interfaces::msg::AgentStatus>(
-        "/" + agent_name + "/" + params_.direct_status_topic, rclcpp::SystemDefaultsQoS(),
+        build_name(agent_name, params_.direct_status_topic), rclcpp::SystemDefaultsQoS(),
         [this, beacon_id](const coug_interfaces::msg::AgentStatus::SharedPtr) {
           auto it = agents_.find(beacon_id);
           if (it != agents_.end()) it->second.last_direct_heartbeat_sec = now().seconds();

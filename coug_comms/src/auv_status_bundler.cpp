@@ -26,7 +26,6 @@ AuvStatusBundlerNode::AuvStatusBundlerNode(const rclcpp::NodeOptions& options)
       std::make_shared<auv_status_bundler_node::ParamListener>(get_node_parameters_interface());
   params_ = param_listener_->get_params();
 
-  // --- ROS Interfaces ---
   tf_buffer_ = std::make_unique<tf2_ros::Buffer>(this->get_clock());
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 
@@ -71,7 +70,7 @@ void AuvStatusBundlerNode::publishStatus() {
   status.odometry_covariance = last_odom_->pose.covariance;
 
   if (last_depth_) {
-    // Transform depth data into the base frame (translation)
+    // Transform depth data into the base frame
     std::string depth_frame = last_depth_->child_frame_id;
 
     geometry_msgs::msg::TransformStamped depth_T_base_tf;
@@ -113,7 +112,7 @@ void AuvStatusBundlerNode::publishStatus() {
   }
 
   if (last_imu_) {
-    // Transform IMU data into the base frame (rotation)
+    // Transform IMU data into the base frame
     std::string imu_frame = last_imu_->header.frame_id;
 
     geometry_msgs::msg::TransformStamped imu_T_base_tf;

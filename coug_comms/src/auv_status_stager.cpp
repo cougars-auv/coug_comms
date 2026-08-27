@@ -30,7 +30,6 @@ AuvStatusStagerNode::AuvStatusStagerNode(const rclcpp::NodeOptions& options)
       std::make_shared<auv_status_stager_node::ParamListener>(get_node_parameters_interface());
   params_ = param_listener_->get_params();
 
-  // --- ROS Interfaces ---
   status_sub_ = create_subscription<coug_interfaces::msg::AgentStatus>(
       params_.status_topic, rclcpp::SystemDefaultsQoS(),
       std::bind(&AuvStatusStagerNode::statusCallback, this, std::placeholders::_1));

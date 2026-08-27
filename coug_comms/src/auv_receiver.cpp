@@ -27,7 +27,6 @@ AuvReceiverNode::AuvReceiverNode(const rclcpp::NodeOptions& options)
       std::make_shared<auv_receiver_node::ParamListener>(get_node_parameters_interface());
   params_ = param_listener_->get_params();
 
-  // --- ROS Interfaces ---
   modem_rec_sub_ = create_subscription<seatrac_interfaces::msg::ModemRec>(
       params_.modem_rec_topic, rclcpp::SystemDefaultsQoS(),
       std::bind(&AuvReceiverNode::modemRecCallback, this, std::placeholders::_1));
@@ -40,7 +39,6 @@ AuvReceiverNode::AuvReceiverNode(const rclcpp::NodeOptions& options)
   emergency_surface_client_ =
       create_client<std_srvs::srv::Trigger>(params_.emergency_surface_service);
 
-  // --- ROS Diagnostics ---
   if (params_.publish_diagnostics) {
     std::string ns = this->get_namespace();
     std::string clean_ns = (ns == "/") ? "" : ns;

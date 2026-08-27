@@ -15,8 +15,19 @@
 #include "coug_comms/base_status_extractor.hpp"
 
 #include <rclcpp_components/register_node_macro.hpp>
+#include <vector>
+
+#include "coug_comms/base_status_extractor_parameters.hpp"
 
 namespace coug_comms {
+
+namespace {
+
+std::string build_name(const std::string& agent, const std::string& sub) {
+  return "/" + agent + "/" + sub;
+}
+
+}  // namespace
 
 BaseStatusExtractorNode::BaseStatusExtractorNode(const rclcpp::NodeOptions& options)
     : Node("base_status_extractor_node", options) {
@@ -50,16 +61,16 @@ void BaseStatusExtractorNode::statusCallback(
 void BaseStatusExtractorNode::registerAgent(const std::string& agent_name) {
   AgentEntry agent;
   agent.odom_pub = create_publisher<nav_msgs::msg::Odometry>(
-      "/" + agent_name + "/" + params_.odom_topic, rclcpp::SystemDefaultsQoS());
+      build_name(agent_name, params_.odom_topic), rclcpp::SystemDefaultsQoS());
 
   agent.depth_pub = create_publisher<nav_msgs::msg::Odometry>(
-      "/" + agent_name + "/" + params_.depth_topic, rclcpp::SystemDefaultsQoS());
+      build_name(agent_name, params_.depth_topic), rclcpp::SystemDefaultsQoS());
 
-  agent.imu_pub = create_publisher<sensor_msgs::msg::Imu>(
-      "/" + agent_name + "/" + params_.imu_topic, rclcpp::SystemDefaultsQoS());
+  agent.imu_pub = create_publisher<sensor_msgs::msg::Imu>(build_name(agent_name, params_.imu_topic),
+                                                          rclcpp::SystemDefaultsQoS());
 
   agent.status_sub = create_subscription<coug_interfaces::msg::AgentStatus>(
-      "/" + agent_name + "/" + params_.status_topic, rclcpp::SystemDefaultsQoS(),
+      build_name(agent_name, params_.status_topic), rclcpp::SystemDefaultsQoS(),
       [this, agent_name](const coug_interfaces::msg::AgentStatus::SharedPtr msg) {
         statusCallback(agent_name, msg);
       });
