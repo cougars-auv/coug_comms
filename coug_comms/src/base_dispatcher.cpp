@@ -83,16 +83,16 @@ void BaseDispatcherNode::registerAgent(const std::string& agent_name, uint8_t be
   agent.is_lead = (agent_name == params_.lead_agent);
 
   for (const auto& spec : services_) {
-    const MsgId cmd = spec.cmd;
+    const MsgId msg = spec.msg;
     agent.services.push_back(create_service<std_srvs::srv::Trigger>(
         build_name(agent_name, spec.relay_service),
-        [this, cmd, beacon_id](
+        [this, msg, beacon_id](
             std::shared_ptr<rclcpp::Service<std_srvs::srv::Trigger>> service_handle,
             std::shared_ptr<rmw_request_id_t> header,
             std::shared_ptr<std_srvs::srv::Trigger::Request>) {
-          handleServiceRequest(cmd, beacon_id, service_handle, header);
+          handleServiceRequest(msg, beacon_id, service_handle, header);
         }));
-    agent.direct_clients[static_cast<uint8_t>(cmd)] =
+    agent.direct_clients[static_cast<uint8_t>(msg)] =
         create_client<std_srvs::srv::Trigger>(build_name(agent_name, spec.direct_service));
   }
 
@@ -118,19 +118,19 @@ void BaseDispatcherNode::registerAgent(const std::string& agent_name, uint8_t be
 }
 
 void BaseDispatcherNode::handleServiceRequest(
-    MsgId cmd, uint8_t beacon_id, rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr service_handle,
+    MsgId msg, uint8_t beacon_id, rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr service_handle,
     std::shared_ptr<rmw_request_id_t> header) {
   AgentEntry& agent = agents_.at(beacon_id);
-  const std::string service = utils::toString(cmd);
+  const std::string service = utils::toString(msg);
 
   if (params_.enable_direct_comms || agent.is_lead) {
-    if (directServiceDispatch(cmd, agent, service_handle, header)) {
+    if (directServiceDispatch(msg, agent, service_handle, header)) {
       return;
     }
   }
 
   if (params_.enable_acoustic_comms && !agent.is_lead) {
-    acousticServiceDispatch(cmd, agent, service_handle, header);
+    acousticServiceDispatch(msg, agent, service_handle, header);
     return;
   }
 
@@ -143,19 +143,19 @@ void BaseDispatcherNode::handleServiceRequest(
 }
 
 bool BaseDispatcherNode::directServiceDispatch(
-    MsgId cmd, const AgentEntry& agent,
+    MsgId msg, const AgentEntry& agent,
     rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr service_handle,
     std::shared_ptr<rmw_request_id_t> header) {
   const bool direct_link_up =
       agent.last_direct_heartbeat_sec > 0.0 &&
       now().seconds() - agent.last_direct_heartbeat_sec < params_.direct_timeout_sec;
-  auto client_it = agent.direct_clients.find(static_cast<uint8_t>(cmd));
+  auto client_it = agent.direct_clients.find(static_cast<uint8_t>(msg));
   if (!direct_link_up || client_it == agent.direct_clients.end() ||
       !client_it->second->service_is_ready()) {
     return false;
   }
 
-  const std::string service = utils::toString(cmd);
+  const std::string service = utils::toString(msg);
   const uint8_t beacon_id = agent.beacon_id;
   client_it->second->async_send_request(
       std::make_shared<std_srvs::srv::Trigger::Request>(),
@@ -183,18 +183,18 @@ bool BaseDispatcherNode::directServiceDispatch(
 }
 
 void BaseDispatcherNode::acousticServiceDispatch(
-    MsgId cmd, const AgentEntry& agent,
+    MsgId msg, const AgentEntry& agent,
     rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr service_handle,
     std::shared_ptr<rmw_request_id_t> header) {
-  seatrac_interfaces::msg::ModemSend msg;
-  msg.msg_id = CID_DAT_SEND;
-  msg.dest_id = agent.beacon_id;
-  msg.msg_type = MSG_OWAY;
-  msg.packet_len = 1;
-  msg.packet_data[0] = static_cast<uint8_t>(cmd);
-  modem_send_pub_->publish(msg);
+  seatrac_interfaces::msg::ModemSend modem_msg;
+  modem_msg.msg_id = CID_DAT_SEND;
+  modem_msg.dest_id = agent.beacon_id;
+  modem_msg.msg_type = MSG_OWAY;
+  modem_msg.packet_len = 1;
+  modem_msg.packet_data[0] = static_cast<uint8_t>(msg);
+  modem_send_pub_->publish(modem_msg);
 
-  const std::string service = utils::toString(cmd);
+  const std::string service = utils::toString(msg);
   std_srvs::srv::Trigger::Response res;
   res.success = true;
   res.message = service + " queued (acomms).";

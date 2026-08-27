@@ -39,7 +39,7 @@ class BaseDispatcherNode : public rclcpp::Node {
   struct ServiceSpec {
     std::string relay_service;
     std::string direct_service;
-    utils::MsgId cmd;
+    utils::MsgId msg;
   };
 
   struct ServiceResult {
@@ -62,15 +62,15 @@ class BaseDispatcherNode : public rclcpp::Node {
   void registerAgent(const std::string& agent_name, uint8_t beacon_id,
                      const std::string& diag_prefix);
 
-  void handleServiceRequest(utils::MsgId cmd, uint8_t beacon_id,
+  void handleServiceRequest(utils::MsgId msg, uint8_t beacon_id,
                             rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr service_handle,
                             std::shared_ptr<rmw_request_id_t> header);
 
-  bool directServiceDispatch(utils::MsgId cmd, const AgentEntry& agent,
+  bool directServiceDispatch(utils::MsgId msg, const AgentEntry& agent,
                              rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr service_handle,
                              std::shared_ptr<rmw_request_id_t> header);
 
-  void acousticServiceDispatch(utils::MsgId cmd, const AgentEntry& agent,
+  void acousticServiceDispatch(utils::MsgId msg, const AgentEntry& agent,
                                rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr service_handle,
                                std::shared_ptr<rmw_request_id_t> header);
 

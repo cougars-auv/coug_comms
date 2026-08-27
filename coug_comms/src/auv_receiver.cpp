@@ -87,8 +87,8 @@ void AuvReceiverNode::modemRecCallback(const seatrac_interfaces::msg::ModemRec::
 }
 
 void AuvReceiverNode::callService(rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr client,
-                                  MsgId cmd) {
-  const std::string service = utils::toString(cmd);
+                                  MsgId msg) {
+  const std::string service = utils::toString(msg);
   if (!client->service_is_ready()) {
     RCLCPP_ERROR(get_logger(), "Service not available: %s", service.c_str());
     recordServiceResult(service, "ACOUSTIC", ServiceOutcome::FAILED);
