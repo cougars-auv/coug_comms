@@ -1,5 +1,5 @@
 base_dispatcher_node:
-  agent_namespaces:
+  agent_list:
     type: string_array
     default_value: []
   publish_diagnostics:

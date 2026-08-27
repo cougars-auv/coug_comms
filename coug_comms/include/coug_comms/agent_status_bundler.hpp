@@ -22,7 +22,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/imu.hpp>
 
-#include "coug_comms/auv_status_bundler_parameters.hpp"
+#include "coug_comms/agent_status_bundler_parameters.hpp"
 #include "coug_interfaces/msg/agent_status.hpp"
 
 namespace coug_comms {
@@ -52,8 +52,8 @@ class AuvStatusBundlerNode : public rclcpp::Node {
   std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
 
   // --- Parameters ---
-  std::shared_ptr<auv_status_bundler_node::ParamListener> param_listener_;
-  auv_status_bundler_node::Params params_;
+  std::shared_ptr<agent_status_bundler_node::ParamListener> param_listener_;
+  agent_status_bundler_node::Params params_;
 
   // --- State ---
   nav_msgs::msg::Odometry::SharedPtr last_odom_;

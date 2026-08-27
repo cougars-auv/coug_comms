@@ -69,7 +69,7 @@ BaseStatusPollerNode::BaseStatusPollerNode(const rclcpp::NodeOptions& options)
     prefix = clean_ns.empty() ? "" : "[" + clean_ns + "] ";
   }
 
-  for (const auto& agent_name : params_.agent_namespaces) {
+  for (const auto& agent_name : params_.agent_list) {
     int raw_id = this->declare_parameter<int>("beacon_ids." + agent_name, -1);
     if (raw_id < 0 || raw_id > kMaxBeaconId) {
       RCLCPP_ERROR(get_logger(), "Missing or invalid beacon_ids.%s (got %d) — skipping '%s'.",

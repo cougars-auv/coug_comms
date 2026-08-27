@@ -1,4 +1,4 @@
-auv_status_stager_node:
+agent_status_stager_node:
   modem_send_topic:
     type: string
     default_value: "modem_send"

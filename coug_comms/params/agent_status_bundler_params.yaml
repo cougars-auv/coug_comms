@@ -1,4 +1,4 @@
-auv_status_bundler_node:
+agent_status_bundler_node:
   status_topic:
     type: string
     default_value: "agent/status"

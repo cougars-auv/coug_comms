@@ -1,5 +1,5 @@
 base_status_extractor_node:
-  agent_namespaces:
+  agent_list:
     type: string_array
     default_value: []
   status_topic:

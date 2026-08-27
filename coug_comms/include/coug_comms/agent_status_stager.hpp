@@ -18,7 +18,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <seatrac_interfaces/msg/modem_send.hpp>
 
-#include "coug_comms/auv_status_stager_parameters.hpp"
+#include "coug_comms/agent_status_stager_parameters.hpp"
 #include "coug_interfaces/msg/agent_status.hpp"
 
 namespace coug_comms {
@@ -36,8 +36,8 @@ class AuvStatusStagerNode : public rclcpp::Node {
   rclcpp::Publisher<seatrac_interfaces::msg::ModemSend>::SharedPtr modem_send_pub_;
 
   // --- Parameters ---
-  std::shared_ptr<auv_status_stager_node::ParamListener> param_listener_;
-  auv_status_stager_node::Params params_;
+  std::shared_ptr<agent_status_stager_node::ParamListener> param_listener_;
+  agent_status_stager_node::Params params_;
 };
 
 }  // namespace coug_comms

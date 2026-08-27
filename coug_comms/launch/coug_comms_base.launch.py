@@ -35,7 +35,7 @@ def launch_setup(context: LaunchContext, *args: Any, **kwargs: Any) -> list[Node
     enable_acoustic_comms = LaunchConfiguration("enable_acoustic_comms")
     agent_list_str = LaunchConfiguration("agent_list").perform(context)
 
-    agent_namespaces = yaml.safe_load(agent_list_str)
+    agent_list = yaml.safe_load(agent_list_str)
 
     fleet_params = PathJoinSubstitution(
         [
@@ -79,7 +79,7 @@ def launch_setup(context: LaunchContext, *args: Any, **kwargs: Any) -> list[Node
         os.path.join(config_dir, "fleet", "coug_comms_params.yaml"), "/**"
     )
     beacon_ids = {}
-    for ns in agent_namespaces:
+    for ns in agent_list:
         agent_params = load_launch_params(
             os.path.join(config_dir, f"{ns}_params.yaml"), f"/{ns}"
         )
@@ -95,7 +95,7 @@ def launch_setup(context: LaunchContext, *args: Any, **kwargs: Any) -> list[Node
             parameters=[
                 fleet_params,
                 {
-                    "agent_namespaces": agent_namespaces,
+                    "agent_list": agent_list,
                     "beacon_ids": beacon_ids,
                     "use_sim_time": use_sim_time,
                     "lead_agent": lead_agent,
@@ -112,7 +112,7 @@ def launch_setup(context: LaunchContext, *args: Any, **kwargs: Any) -> list[Node
             parameters=[
                 fleet_params,
                 {
-                    "agent_namespaces": agent_namespaces,
+                    "agent_list": agent_list,
                     "beacon_ids": beacon_ids,
                     "use_sim_time": use_sim_time,
                     "lead_agent": lead_agent,
@@ -130,7 +130,7 @@ def launch_setup(context: LaunchContext, *args: Any, **kwargs: Any) -> list[Node
             parameters=[
                 fleet_params,
                 {
-                    "agent_namespaces": agent_namespaces,
+                    "agent_list": agent_list,
                     "use_sim_time": use_sim_time,
                 },
             ],

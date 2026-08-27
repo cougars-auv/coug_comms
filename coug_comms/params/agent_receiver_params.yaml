@@ -1,4 +1,4 @@
-auv_receiver_node:
+agent_receiver_node:
   publish_diagnostics:
     type: bool
     default_value: false

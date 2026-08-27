@@ -15,11 +15,11 @@
 #include <memory>
 #include <rclcpp/rclcpp.hpp>
 
-#include "coug_comms/auv_status_stager.hpp"
+#include "coug_comms/agent_receiver.hpp"
 
 int main(int argc, char* argv[]) {
   rclcpp::init(argc, argv);
-  auto node = std::make_shared<coug_comms::AuvStatusStagerNode>(rclcpp::NodeOptions());
+  auto node = std::make_shared<coug_comms::AuvReceiverNode>(rclcpp::NodeOptions());
   rclcpp::spin(node);
   rclcpp::shutdown();
   return 0;

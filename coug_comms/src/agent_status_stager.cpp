@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "coug_comms/auv_status_stager.hpp"
+#include "coug_comms/agent_status_stager.hpp"
 
 #include <rclcpp_components/register_node_macro.hpp>
 
@@ -25,9 +25,9 @@ using utils::BEACON_ALL;
 using utils::CID_DAT_QUEUE_SET;
 
 AuvStatusStagerNode::AuvStatusStagerNode(const rclcpp::NodeOptions& options)
-    : Node("auv_status_stager_node", options) {
+    : Node("agent_status_stager_node", options) {
   param_listener_ =
-      std::make_shared<auv_status_stager_node::ParamListener>(get_node_parameters_interface());
+      std::make_shared<agent_status_stager_node::ParamListener>(get_node_parameters_interface());
   params_ = param_listener_->get_params();
 
   status_sub_ = create_subscription<coug_interfaces::msg::AgentStatus>(

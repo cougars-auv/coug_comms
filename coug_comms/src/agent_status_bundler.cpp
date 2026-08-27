@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "coug_comms/auv_status_bundler.hpp"
+#include "coug_comms/agent_status_bundler.hpp"
 
 #include <rclcpp_components/register_node_macro.hpp>
 #include <string>
@@ -21,9 +21,9 @@
 namespace coug_comms {
 
 AuvStatusBundlerNode::AuvStatusBundlerNode(const rclcpp::NodeOptions& options)
-    : Node("auv_status_bundler_node", options) {
+    : Node("agent_status_bundler_node", options) {
   param_listener_ =
-      std::make_shared<auv_status_bundler_node::ParamListener>(get_node_parameters_interface());
+      std::make_shared<agent_status_bundler_node::ParamListener>(get_node_parameters_interface());
   params_ = param_listener_->get_params();
 
   tf_buffer_ = std::make_unique<tf2_ros::Buffer>(this->get_clock());

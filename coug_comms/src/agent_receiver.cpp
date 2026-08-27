@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "coug_comms/auv_receiver.hpp"
+#include "coug_comms/agent_receiver.hpp"
 
 #include <rclcpp_components/register_node_macro.hpp>
 
@@ -22,9 +22,9 @@ using utils::MsgId;
 using utils::ServiceOutcome;
 
 AuvReceiverNode::AuvReceiverNode(const rclcpp::NodeOptions& options)
-    : Node("auv_receiver_node", options), diagnostic_updater_(this) {
+    : Node("agent_receiver_node", options), diagnostic_updater_(this) {
   param_listener_ =
-      std::make_shared<auv_receiver_node::ParamListener>(get_node_parameters_interface());
+      std::make_shared<agent_receiver_node::ParamListener>(get_node_parameters_interface());
   params_ = param_listener_->get_params();
 
   modem_rec_sub_ = create_subscription<seatrac_interfaces::msg::ModemRec>(
@@ -42,7 +42,7 @@ AuvReceiverNode::AuvReceiverNode(const rclcpp::NodeOptions& options)
   if (params_.publish_diagnostics) {
     std::string ns = this->get_namespace();
     std::string clean_ns = (ns == "/") ? "" : ns;
-    diagnostic_updater_.setHardwareID(clean_ns + "/auv_receiver_node");
+    diagnostic_updater_.setHardwareID(clean_ns + "/agent_receiver_node");
 
     std::string prefix = clean_ns.empty() ? "" : "[" + clean_ns + "] ";
 

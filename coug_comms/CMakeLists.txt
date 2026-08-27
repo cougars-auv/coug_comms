@@ -16,9 +16,9 @@ ament_auto_find_build_dependencies()
 find_package(Eigen3 REQUIRED)
 
 set(COUG_COMMS_NODES
-  auv_receiver
-  auv_status_bundler
-  auv_status_stager
+  agent_receiver
+  agent_status_bundler
+  agent_status_stager
   base_dispatcher
   base_status_extractor
   base_status_poller

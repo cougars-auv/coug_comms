@@ -22,7 +22,7 @@
 #include <std_srvs/srv/trigger.hpp>
 #include <string>
 
-#include "coug_comms/auv_receiver_parameters.hpp"
+#include "coug_comms/agent_receiver_parameters.hpp"
 #include "coug_comms/utils/protocol_enums.hpp"
 #include "coug_comms/utils/service_enums.hpp"
 
@@ -62,8 +62,8 @@ class AuvReceiverNode : public rclcpp::Node {
   diagnostic_updater::Updater diagnostic_updater_;
 
   // --- Parameters ---
-  std::shared_ptr<auv_receiver_node::ParamListener> param_listener_;
-  auv_receiver_node::Params params_;
+  std::shared_ptr<agent_receiver_node::ParamListener> param_listener_;
+  agent_receiver_node::Params params_;
 
   // --- State ---
   std::deque<ServiceResult> service_history_;
