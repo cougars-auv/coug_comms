@@ -55,8 +55,6 @@ inline constexpr int32_t kQuatRange = 1 << kQuatBits;
 inline constexpr int32_t kQuatMax = kQuatRange / 2 - 1;
 inline constexpr double kQuatLimit = M_SQRT1_2;
 
-// --- Field Codecs ---
-
 inline double roundClamp(double value, double min_value, double max_value) {
   if (std::isnan(value)) return 0.0;
   return std::clamp(std::round(value), min_value, max_value);
@@ -140,8 +138,6 @@ inline geometry_msgs::msg::Quaternion decodeQuaternion(uint32_t packed) {
   return quat;
 }
 
-// --- Payload Cursor ---
-
 class PayloadCursor {
  public:
   template <typename T>
@@ -165,8 +161,6 @@ class PayloadCursor {
  private:
   size_t offset_ = 0;
 };
-
-// --- Status Codec ---
 
 inline uint8_t encodeStatus(const coug_interfaces::msg::AgentStatus& status, DatPayload& payload) {
   PayloadCursor cursor;
