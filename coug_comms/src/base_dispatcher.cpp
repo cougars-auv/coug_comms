@@ -20,10 +20,12 @@
 
 namespace coug_comms {
 
+using coug_interfaces::msg::AgentStatus;
 using utils::CID_DAT_SEND;
 using utils::MSG_OWAY;
 using utils::MsgId;
 using utils::ServiceOutcome;
+using utils::toString;
 
 namespace {
 
@@ -97,9 +99,9 @@ void BaseDispatcherNode::registerAgent(const std::string& agent_name, uint8_t be
   }
 
   if (params_.enable_direct_comms || agent.is_lead) {
-    agent.direct_status_sub = create_subscription<coug_interfaces::msg::AgentStatus>(
+    agent.direct_status_sub = create_subscription<AgentStatus>(
         build_name(agent_name, params_.direct_status_topic), rclcpp::SystemDefaultsQoS(),
-        [this, beacon_id](const coug_interfaces::msg::AgentStatus::SharedPtr) {
+        [this, beacon_id](const AgentStatus::SharedPtr) {
           auto it = agents_.find(beacon_id);
           if (it != agents_.end()) it->second.last_direct_heartbeat_sec = now().seconds();
         });
@@ -121,7 +123,7 @@ void BaseDispatcherNode::handleServiceRequest(
     MsgId msg, uint8_t beacon_id, rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr service_handle,
     std::shared_ptr<rmw_request_id_t> header) {
   AgentEntry& agent = agents_.at(beacon_id);
-  const std::string service = utils::toString(msg);
+  const std::string service = toString(msg);
 
   if (params_.enable_direct_comms || agent.is_lead) {
     if (directServiceDispatch(msg, agent, service_handle, header)) {
@@ -155,7 +157,7 @@ bool BaseDispatcherNode::directServiceDispatch(
     return false;
   }
 
-  const std::string service = utils::toString(msg);
+  const std::string service = toString(msg);
   const uint8_t beacon_id = agent.beacon_id;
   client_it->second->async_send_request(
       std::make_shared<std_srvs::srv::Trigger::Request>(),
@@ -194,7 +196,7 @@ void BaseDispatcherNode::acousticServiceDispatch(
   modem_msg.packet_data[0] = static_cast<uint8_t>(msg);
   modem_send_pub_->publish(modem_msg);
 
-  const std::string service = utils::toString(msg);
+  const std::string service = toString(msg);
   std_srvs::srv::Trigger::Response res;
   res.success = true;
   res.message = service + " queued (acomms).";
@@ -228,12 +230,12 @@ void BaseDispatcherNode::checkAgentServiceStatus(diagnostic_updater::DiagnosticS
 
   std::string history_str;
   for (auto it = agent.service_history.rbegin(); it != agent.service_history.rend(); ++it) {
-    history_str += "\n" + it->service + " (" + it->transport + "): " + utils::toString(it->outcome);
+    history_str += "\n" + it->service + " (" + it->transport + "): " + toString(it->outcome);
   }
   stat.add("Service History", history_str);
 
   const ServiceResult& latest = agent.service_history.back();
-  const std::string summary = latest.service + " " + utils::toString(latest.outcome) + ".";
+  const std::string summary = latest.service + " " + toString(latest.outcome) + ".";
   if (latest.outcome == ServiceOutcome::kFailed) {
     stat.summary(diagnostic_msgs::msg::DiagnosticStatus::ERROR, summary);
   } else {

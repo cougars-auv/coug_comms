@@ -21,6 +21,8 @@
 
 namespace coug_comms {
 
+using coug_interfaces::msg::AgentStatus;
+
 namespace {
 
 std::string build_name(const std::string& agent, const std::string& sub) {
@@ -42,8 +44,8 @@ BaseStatusExtractorNode::BaseStatusExtractorNode(const rclcpp::NodeOptions& opti
   RCLCPP_INFO(get_logger(), "Initialization complete.");
 }
 
-void BaseStatusExtractorNode::statusCallback(
-    const std::string& agent_name, const coug_interfaces::msg::AgentStatus::SharedPtr msg) {
+void BaseStatusExtractorNode::statusCallback(const std::string& agent_name,
+                                             const AgentStatus::SharedPtr msg) {
   auto it = agents_.find(agent_name);
   if (it == agents_.end()) {
     return;
@@ -66,18 +68,16 @@ void BaseStatusExtractorNode::registerAgent(const std::string& agent_name) {
   agent.imu_pub = create_publisher<sensor_msgs::msg::Imu>(build_name(agent_name, params_.imu_topic),
                                                           rclcpp::SystemDefaultsQoS());
 
-  agent.status_sub = create_subscription<coug_interfaces::msg::AgentStatus>(
+  agent.status_sub = create_subscription<AgentStatus>(
       build_name(agent_name, params_.status_topic), rclcpp::SystemDefaultsQoS(),
-      [this, agent_name](const coug_interfaces::msg::AgentStatus::SharedPtr msg) {
-        statusCallback(agent_name, msg);
-      });
+      [this, agent_name](const AgentStatus::SharedPtr msg) { statusCallback(agent_name, msg); });
 
   agents_.emplace(agent_name, std::move(agent));
   RCLCPP_INFO(get_logger(), "Registered agent '%s'.", agent_name.c_str());
 }
 
-nav_msgs::msg::Odometry BaseStatusExtractorNode::convertToOdom(
-    const std::string& agent_name, const coug_interfaces::msg::AgentStatus::SharedPtr msg) {
+nav_msgs::msg::Odometry BaseStatusExtractorNode::convertToOdom(const std::string& agent_name,
+                                                               const AgentStatus::SharedPtr msg) {
   nav_msgs::msg::Odometry odom_msg;
   odom_msg.header = msg->header;
   odom_msg.header.frame_id = "map";
@@ -87,16 +87,14 @@ nav_msgs::msg::Odometry BaseStatusExtractorNode::convertToOdom(
   return odom_msg;
 }
 
-nav_msgs::msg::Odometry BaseStatusExtractorNode::convertToDepth(
-    const coug_interfaces::msg::AgentStatus::SharedPtr msg) {
+nav_msgs::msg::Odometry BaseStatusExtractorNode::convertToDepth(const AgentStatus::SharedPtr msg) {
   nav_msgs::msg::Odometry depth_msg;
   depth_msg.header = msg->header;
   depth_msg.pose.pose.position.z = msg->pressure_depth;
   return depth_msg;
 }
 
-sensor_msgs::msg::Imu BaseStatusExtractorNode::convertToImu(
-    const coug_interfaces::msg::AgentStatus::SharedPtr msg) {
+sensor_msgs::msg::Imu BaseStatusExtractorNode::convertToImu(const AgentStatus::SharedPtr msg) {
   sensor_msgs::msg::Imu imu_msg;
   imu_msg.header = msg->header;
   imu_msg.orientation = msg->imu_orientation;

@@ -27,6 +27,7 @@ using coug_comms::utils::kCovStride;
 using coug_comms::utils::kMaxVariance;
 using coug_comms::utils::kMinVariance;
 using coug_comms::utils::kStatusPacketLen;
+using coug_interfaces::msg::AgentStatus;
 
 constexpr double kMetersTol = 0.005;    // exactly half the 1 cm quantization step
 constexpr double kQuatTol = 0.0025;     // the rebuilt component stacks all three 0.0007 half-steps
@@ -54,7 +55,7 @@ void expectQuatNear(const geometry_msgs::msg::Quaternion& actual,
 }  // namespace
 
 TEST(StatusCodecTest, RoundTrip) {
-  coug_interfaces::msg::AgentStatus in;
+  AgentStatus in;
   in.local_odometry.position.x = 12.34;
   in.local_odometry.position.y = -56.78;
   in.local_odometry.position.z = 3.20;
@@ -68,7 +69,7 @@ TEST(StatusCodecTest, RoundTrip) {
   DatPayload buf{};
   ASSERT_EQ(encodeStatus(in, buf), kStatusPacketLen);
 
-  coug_interfaces::msg::AgentStatus out;
+  AgentStatus out;
   out.header.frame_id = "coug1/base_link";
   out.odometry_covariance.fill(99.0);
   ASSERT_TRUE(decodeStatus(buf, kStatusPacketLen, out));

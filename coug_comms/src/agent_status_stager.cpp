@@ -21,8 +21,10 @@
 
 namespace coug_comms {
 
+using coug_interfaces::msg::AgentStatus;
 using utils::BEACON_ALL;
 using utils::CID_DAT_QUEUE_SET;
+using utils::encodeStatus;
 
 AgentStatusStagerNode::AgentStatusStagerNode(const rclcpp::NodeOptions& options)
     : Node("agent_status_stager_node", options) {
@@ -30,7 +32,7 @@ AgentStatusStagerNode::AgentStatusStagerNode(const rclcpp::NodeOptions& options)
       std::make_shared<agent_status_stager_node::ParamListener>(get_node_parameters_interface());
   params_ = param_listener_->get_params();
 
-  status_sub_ = create_subscription<coug_interfaces::msg::AgentStatus>(
+  status_sub_ = create_subscription<AgentStatus>(
       params_.status_topic, rclcpp::SystemDefaultsQoS(),
       std::bind(&AgentStatusStagerNode::statusCallback, this, std::placeholders::_1));
 
@@ -40,11 +42,11 @@ AgentStatusStagerNode::AgentStatusStagerNode(const rclcpp::NodeOptions& options)
   RCLCPP_INFO(get_logger(), "Initialization complete.");
 }
 
-void AgentStatusStagerNode::statusCallback(const coug_interfaces::msg::AgentStatus::SharedPtr msg) {
+void AgentStatusStagerNode::statusCallback(const AgentStatus::SharedPtr msg) {
   seatrac_interfaces::msg::ModemSend send_msg;
   send_msg.msg_id = CID_DAT_QUEUE_SET;
   send_msg.dest_id = BEACON_ALL;
-  send_msg.packet_len = utils::encodeStatus(*msg, send_msg.packet_data);
+  send_msg.packet_len = encodeStatus(*msg, send_msg.packet_data);
   modem_send_pub_->publish(send_msg);
 }
 

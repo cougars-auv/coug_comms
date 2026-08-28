@@ -20,6 +20,8 @@
 
 namespace coug_comms {
 
+using coug_interfaces::msg::AgentStatus;
+
 AgentStatusBundlerNode::AgentStatusBundlerNode(const rclcpp::NodeOptions& options)
     : Node("agent_status_bundler_node", options) {
   param_listener_ =
@@ -41,8 +43,7 @@ AgentStatusBundlerNode::AgentStatusBundlerNode(const rclcpp::NodeOptions& option
       params_.imu_topic, rclcpp::SystemDefaultsQoS(),
       std::bind(&AgentStatusBundlerNode::imuCallback, this, std::placeholders::_1));
 
-  status_pub_ = create_publisher<coug_interfaces::msg::AgentStatus>(params_.status_topic,
-                                                                    rclcpp::SystemDefaultsQoS());
+  status_pub_ = create_publisher<AgentStatus>(params_.status_topic, rclcpp::SystemDefaultsQoS());
 
   RCLCPP_INFO(get_logger(), "Initialization complete.");
 }
@@ -63,7 +64,7 @@ void AgentStatusBundlerNode::imuCallback(const sensor_msgs::msg::Imu::SharedPtr 
 void AgentStatusBundlerNode::publishStatus() {
   if (!last_odom_) return;
 
-  coug_interfaces::msg::AgentStatus status;
+  AgentStatus status;
   status.header.stamp = now();
 
   status.local_odometry = last_odom_->pose.pose;

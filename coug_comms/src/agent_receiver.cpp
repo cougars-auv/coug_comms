@@ -20,6 +20,7 @@ namespace coug_comms {
 
 using utils::MsgId;
 using utils::ServiceOutcome;
+using utils::toString;
 
 AgentReceiverNode::AgentReceiverNode(const rclcpp::NodeOptions& options)
     : Node("agent_receiver_node", options), diagnostic_updater_(this) {
@@ -81,14 +82,13 @@ void AgentReceiverNode::modemRecCallback(const seatrac_interfaces::msg::ModemRec
       return;
   }
 
-  RCLCPP_INFO(get_logger(), "Received %s from beacon %d.", utils::toString(msg_id).c_str(),
-              msg->src_id);
+  RCLCPP_INFO(get_logger(), "Received %s from beacon %d.", toString(msg_id).c_str(), msg->src_id);
   callService(client, msg_id);
 }
 
 void AgentReceiverNode::callService(rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr client,
                                     MsgId msg) {
-  const std::string service = utils::toString(msg);
+  const std::string service = toString(msg);
   if (!client->service_is_ready()) {
     RCLCPP_ERROR(get_logger(), "Service not available: %s", service.c_str());
     recordServiceResult(service, "ACOUSTIC", ServiceOutcome::kFailed);
@@ -129,12 +129,12 @@ void AgentReceiverNode::checkServiceStatus(diagnostic_updater::DiagnosticStatusW
 
   std::string history_str;
   for (auto it = service_history_.rbegin(); it != service_history_.rend(); ++it) {
-    history_str += "\n" + it->service + " (" + it->transport + "): " + utils::toString(it->outcome);
+    history_str += "\n" + it->service + " (" + it->transport + "): " + toString(it->outcome);
   }
   stat.add("Service History", history_str);
 
   const ServiceResult& latest = service_history_.back();
-  const std::string summary = latest.service + " " + utils::toString(latest.outcome) + ".";
+  const std::string summary = latest.service + " " + toString(latest.outcome) + ".";
   if (latest.outcome == ServiceOutcome::kFailed) {
     stat.summary(diagnostic_msgs::msg::DiagnosticStatus::ERROR, summary);
   } else {

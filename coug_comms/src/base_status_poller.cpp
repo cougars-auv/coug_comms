@@ -25,8 +25,10 @@
 
 namespace coug_comms {
 
+using coug_interfaces::msg::AgentStatus;
 using utils::CID_DAT_SEND;
 using utils::CST_XCVR_RESP_TIMEOUT;
+using utils::decodeStatus;
 using utils::MSG_REQX;
 using utils::MsgId;
 
@@ -104,8 +106,8 @@ void BaseStatusPollerNode::modemRecCallback(
     return;
   }
 
-  coug_interfaces::msg::AgentStatus status;
-  if (!utils::decodeStatus(msg->packet_data, msg->packet_len, status)) {
+  AgentStatus status;
+  if (!decodeStatus(msg->packet_data, msg->packet_len, status)) {
     failPendingRequest("undecodable status payload");
     return;
   }
@@ -144,14 +146,14 @@ void BaseStatusPollerNode::registerAgent(const std::string& agent_name, uint8_t 
   agent.name = agent_name;
   agent.beacon_id = beacon_id;
   agent.is_lead = (agent_name == params_.lead_agent);
-  agent.status_pub = create_publisher<coug_interfaces::msg::AgentStatus>(
-      build_name(agent_name, params_.status_topic), rclcpp::SystemDefaultsQoS());
+  agent.status_pub = create_publisher<AgentStatus>(build_name(agent_name, params_.status_topic),
+                                                   rclcpp::SystemDefaultsQoS());
   agent.last_response_time = now();
 
   if (params_.enable_direct_comms || agent.is_lead) {
-    agent.direct_status_sub = create_subscription<coug_interfaces::msg::AgentStatus>(
+    agent.direct_status_sub = create_subscription<AgentStatus>(
         build_name(agent_name, params_.direct_status_topic), rclcpp::SystemDefaultsQoS(),
-        [this, beacon_id](const coug_interfaces::msg::AgentStatus::SharedPtr msg) {
+        [this, beacon_id](const AgentStatus::SharedPtr msg) {
           auto it = agents_.find(beacon_id);
           if (it == agents_.end()) return;
           it->second.last_direct_heartbeat_sec = now().seconds();
@@ -213,8 +215,7 @@ void BaseStatusPollerNode::sendAcousticPoll(AgentEntry& agent) {
   request_time_ = now();
 }
 
-void BaseStatusPollerNode::publishStatus(AgentEntry& agent,
-                                         coug_interfaces::msg::AgentStatus status,
+void BaseStatusPollerNode::publishStatus(AgentEntry& agent, AgentStatus status,
                                          const std::string& transport) {
   status.header.stamp = now();
   agent.status_pub->publish(status);
