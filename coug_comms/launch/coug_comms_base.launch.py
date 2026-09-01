@@ -37,7 +37,7 @@ def launch_setup(context: LaunchContext, *args: Any, **kwargs: Any) -> list[Node
 
     agent_list = yaml.safe_load(agent_list_str)
 
-    fleet_params = PathJoinSubstitution(
+    fleet_param_file = PathJoinSubstitution(
         [
             EnvironmentVariable("CONFIG_DIR"),
             "fleet",
@@ -65,7 +65,7 @@ def launch_setup(context: LaunchContext, *args: Any, **kwargs: Any) -> list[Node
             "modem_cmd_update_topic": f"/{lead_agent_ns}/modem_cmd_update",
         }
 
-    config_dir = os.environ.get("CONFIG_DIR", "")
+    config_dir = os.environ["CONFIG_DIR"]
 
     def load_launch_params(path: str, top_key: str) -> dict[str, Any]:
         try:
@@ -80,10 +80,12 @@ def launch_setup(context: LaunchContext, *args: Any, **kwargs: Any) -> list[Node
     )
     beacon_ids = {}
     for agent_ns in agent_list:
-        agent_params = load_launch_params(
+        agent_launch_params = load_launch_params(
             os.path.join(config_dir, f"{agent_ns}_params.yaml"), f"/{agent_ns}"
         )
-        beacon_id = agent_params.get("beacon_id", fleet_defaults.get("beacon_id"))
+        beacon_id = agent_launch_params.get(
+            "beacon_id", fleet_defaults.get("beacon_id")
+        )
         if beacon_id is not None:
             beacon_ids[agent_ns] = beacon_id
 
@@ -93,7 +95,7 @@ def launch_setup(context: LaunchContext, *args: Any, **kwargs: Any) -> list[Node
             executable="base_dispatcher",
             name="base_dispatcher_node",
             parameters=[
-                fleet_params,
+                fleet_param_file,
                 {
                     "agent_list": agent_list,
                     "beacon_ids": beacon_ids,
@@ -110,7 +112,7 @@ def launch_setup(context: LaunchContext, *args: Any, **kwargs: Any) -> list[Node
             executable="base_status_poller",
             name="base_status_poller_node",
             parameters=[
-                fleet_params,
+                fleet_param_file,
                 {
                     "agent_list": agent_list,
                     "beacon_ids": beacon_ids,
@@ -128,7 +130,7 @@ def launch_setup(context: LaunchContext, *args: Any, **kwargs: Any) -> list[Node
             executable="base_status_extractor",
             name="base_status_extractor_node",
             parameters=[
-                fleet_params,
+                fleet_param_file,
                 {
                     "agent_list": agent_list,
                     "use_sim_time": use_sim_time,

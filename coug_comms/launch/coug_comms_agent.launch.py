@@ -27,14 +27,14 @@ def generate_launch_description() -> LaunchDescription:
     use_sim_time = LaunchConfiguration("use_sim_time")
     agent_ns = LaunchConfiguration("agent_ns")
 
-    fleet_params = PathJoinSubstitution(
+    fleet_param_file = PathJoinSubstitution(
         [
             EnvironmentVariable("CONFIG_DIR"),
             "fleet",
             "coug_comms_params.yaml",
         ]
     )
-    agent_params = PathJoinSubstitution(
+    agent_param_file = PathJoinSubstitution(
         [
             EnvironmentVariable("CONFIG_DIR"),
             PythonExpression(["'", agent_ns, "' + '_params.yaml'"]),
@@ -68,8 +68,8 @@ def generate_launch_description() -> LaunchDescription:
                 executable="agent_receiver",
                 name="agent_receiver_node",
                 parameters=[
-                    fleet_params,
-                    agent_params,
+                    fleet_param_file,
+                    agent_param_file,
                     {"use_sim_time": use_sim_time},
                 ],
             ),
@@ -78,8 +78,8 @@ def generate_launch_description() -> LaunchDescription:
                 executable="agent_status_stager",
                 name="agent_status_stager_node",
                 parameters=[
-                    fleet_params,
-                    agent_params,
+                    fleet_param_file,
+                    agent_param_file,
                     {"use_sim_time": use_sim_time},
                 ],
             ),
@@ -88,8 +88,8 @@ def generate_launch_description() -> LaunchDescription:
                 executable="agent_status_bundler",
                 name="agent_status_bundler_node",
                 parameters=[
-                    fleet_params,
-                    agent_params,
+                    fleet_param_file,
+                    agent_param_file,
                     {
                         "use_sim_time": use_sim_time,
                         "base_frame": base_link_frame,
