@@ -69,8 +69,8 @@ def launch_setup(context: LaunchContext, *args: Any, **kwargs: Any) -> list[Node
 
     def load_launch_params(path: str, top_key: str) -> dict[str, Any]:
         try:
-            with open(path) as f:
-                config = yaml.safe_load(f)
+            with open(path) as config_file:
+                config = yaml.safe_load(config_file)
             return config[top_key]["coug_comms_base_launch"]["ros__parameters"]
         except (KeyError, TypeError, OSError):
             return {}
@@ -79,13 +79,13 @@ def launch_setup(context: LaunchContext, *args: Any, **kwargs: Any) -> list[Node
         os.path.join(config_dir, "fleet", "coug_comms_params.yaml"), "/**"
     )
     beacon_ids = {}
-    for ns in agent_list:
+    for agent_ns in agent_list:
         agent_params = load_launch_params(
-            os.path.join(config_dir, f"{ns}_params.yaml"), f"/{ns}"
+            os.path.join(config_dir, f"{agent_ns}_params.yaml"), f"/{agent_ns}"
         )
         beacon_id = agent_params.get("beacon_id", fleet_defaults.get("beacon_id"))
         if beacon_id is not None:
-            beacon_ids[ns] = beacon_id
+            beacon_ids[agent_ns] = beacon_id
 
     return [
         Node(
