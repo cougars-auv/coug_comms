@@ -199,7 +199,7 @@ void BaseDispatcherNode::acousticServiceDispatch(
   const std::string service = toString(msg);
   std_srvs::srv::Trigger::Response res;
   res.success = true;
-  res.message = service + " queued (acomms).";
+  res.message = service + " queued.";
   service_handle->send_response(*header, res);
   RCLCPP_INFO(get_logger(), "%s", res.message.c_str());
   recordServiceResult(agent.beacon_id, service, "ACOUSTIC", ServiceOutcome::kQueued);
