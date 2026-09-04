@@ -19,7 +19,6 @@
 #include <cmath>
 #include <cstdint>
 #include <diagnostic_updater/diagnostic_status_wrapper.hpp>
-#include <functional>
 #include <geometry_msgs/msg/transform_stamped.hpp>
 #include <memory>
 #include <rclcpp/logging.hpp>

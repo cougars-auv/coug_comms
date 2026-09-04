@@ -17,7 +17,6 @@
 #include <cstddef>
 #include <diagnostic_updater/diagnostic_status_wrapper.hpp>
 #include <exception>
-#include <functional>
 #include <memory>
 #include <rclcpp/client.hpp>
 #include <rclcpp/logging.hpp>

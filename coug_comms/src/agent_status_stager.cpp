@@ -14,7 +14,6 @@
 
 #include "coug_comms/agent_status_stager.hpp"
 
-#include <functional>
 #include <memory>
 #include <rclcpp/logging.hpp>
 #include <rclcpp/node.hpp>

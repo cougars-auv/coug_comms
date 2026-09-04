@@ -10,11 +10,23 @@ Checks: >
   performance-*,
   portability-*,
   readability-*,
-  -bugprone-easily-swappable-parameters
+  -bugprone-easily-swappable-parameters,
+  -cppcoreguidelines-avoid-magic-numbers,
+  -cppcoreguidelines-pro-bounds-constant-array-index,
+  -cppcoreguidelines-pro-type-vararg,
+  -openmp-use-default-none,
+  -readability-function-cognitive-complexity,
+  -readability-identifier-length,
+  -readability-magic-numbers
+
+CheckOptions:
+  misc-include-cleaner.IgnoreHeaders: 'Eigen/.*;Qt.*/.*;math.h'
+
+FormatStyle: file
+
 WarningsAsErrors: >
   bugprone-*,
   clang-analyzer-*,
   concurrency-*,
   performance-*,
   portability-*
-FormatStyle: file
