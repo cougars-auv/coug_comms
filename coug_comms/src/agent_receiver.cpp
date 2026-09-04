@@ -46,7 +46,9 @@ AgentReceiverNode::AgentReceiverNode(const rclcpp::NodeOptions& options)
 
   modem_rec_sub_ = create_subscription<seatrac_interfaces::msg::ModemRec>(
       params_.modem_rec_topic, rclcpp::SystemDefaultsQoS(),
-      [this](seatrac_interfaces::msg::ModemRec::SharedPtr msg) { modemRecCallback(msg); });
+      [this](const seatrac_interfaces::msg::ModemRec::ConstSharedPtr& msg) {
+        modemRecCallback(msg);
+      });
 
   start_client_ = create_client<std_srvs::srv::Trigger>(params_.start_service);
   stop_client_ = create_client<std_srvs::srv::Trigger>(params_.stop_service);
@@ -70,7 +72,8 @@ AgentReceiverNode::AgentReceiverNode(const rclcpp::NodeOptions& options)
   RCLCPP_INFO(get_logger(), "Initialization complete.");
 }
 
-void AgentReceiverNode::modemRecCallback(const seatrac_interfaces::msg::ModemRec::SharedPtr& msg) {
+void AgentReceiverNode::modemRecCallback(
+    const seatrac_interfaces::msg::ModemRec::ConstSharedPtr& msg) {
   if (!msg->local_flag || msg->packet_len < 1) {
     return;
   }
@@ -114,6 +117,7 @@ void AgentReceiverNode::callService(const rclcpp::Client<std_srvs::srv::Trigger>
   }
   client->async_send_request(
       std::make_shared<std_srvs::srv::Trigger::Request>(),
+      // NOLINTNEXTLINE(performance-unnecessary-value-param)
       [this, service](rclcpp::Client<std_srvs::srv::Trigger>::SharedFuture future) {
         bool success = false;
         try {

@@ -87,9 +87,9 @@ BaseDispatcherNode::BaseDispatcherNode(const rclcpp::NodeOptions& options)
   }
 
   for (const auto& agent_name : params_.agent_list) {
-    int const raw_id = this->declare_parameter<int>("beacon_ids." + agent_name, -1);
+    int64_t const raw_id = this->declare_parameter<int64_t>("beacon_ids." + agent_name, -1);
     if (raw_id < 0 || raw_id > kMaxBeaconId) {
-      RCLCPP_ERROR(get_logger(), "Missing or invalid beacon_ids.%s (got %d) — skipping '%s'.",
+      RCLCPP_ERROR(get_logger(), "Missing or invalid beacon_ids.%s (got %ld) — skipping '%s'.",
                    agent_name.c_str(), raw_id, agent_name.c_str());
       continue;
     }
@@ -110,9 +110,9 @@ void BaseDispatcherNode::registerAgent(const std::string& agent_name, uint8_t be
     agent.services.push_back(create_service<std_srvs::srv::Trigger>(
         build_name(agent_name, spec.relay_service),
         [this, msg, beacon_id](
-            std::shared_ptr<rclcpp::Service<std_srvs::srv::Trigger>> service_handle,
-            std::shared_ptr<rmw_request_id_t> header,
-            std::shared_ptr<std_srvs::srv::Trigger::Request>) {
+            const std::shared_ptr<rclcpp::Service<std_srvs::srv::Trigger>>& service_handle,
+            const std::shared_ptr<rmw_request_id_t>& header,
+            const std::shared_ptr<std_srvs::srv::Trigger::Request>&) {
           handleServiceRequest(msg, beacon_id, service_handle, header);
         }));
     agent.direct_clients[static_cast<uint8_t>(msg)] =
@@ -122,7 +122,7 @@ void BaseDispatcherNode::registerAgent(const std::string& agent_name, uint8_t be
   if (params_.enable_direct_comms || agent.is_lead) {
     agent.direct_status_sub = create_subscription<AgentStatus>(
         build_name(agent_name, params_.direct_status_topic), rclcpp::SystemDefaultsQoS(),
-        [this, beacon_id](const AgentStatus::SharedPtr) {
+        [this, beacon_id](const AgentStatus::ConstSharedPtr&) {
           auto it = agents_.find(beacon_id);
           if (it != agents_.end()) {
             it->second.last_direct_heartbeat_sec = now().seconds();
@@ -186,6 +186,7 @@ auto BaseDispatcherNode::directServiceDispatch(
   client_it->second->async_send_request(
       std::make_shared<std_srvs::srv::Trigger::Request>(),
       [this, service_handle, header, service,
+       // NOLINTNEXTLINE(performance-unnecessary-value-param)
        beacon_id](rclcpp::Client<std_srvs::srv::Trigger>::SharedFuture future) {
         bool success = false;
         try {

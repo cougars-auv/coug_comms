@@ -52,9 +52,9 @@ class BaseStatusPollerNode : public rclcpp::Node {
   // --- Callbacks ---
   void tickCallback();
 
-  void modemRecCallback(const seatrac_interfaces::msg::ModemRec::SharedPtr& msg);
+  void modemRecCallback(const seatrac_interfaces::msg::ModemRec::ConstSharedPtr& msg);
 
-  void modemCmdUpdateCallback(const seatrac_interfaces::msg::ModemCmdUpdate::SharedPtr& msg);
+  void modemCmdUpdateCallback(const seatrac_interfaces::msg::ModemCmdUpdate::ConstSharedPtr& msg);
 
   // --- Helpers ---
   void registerAgent(const std::string& agent_name, uint8_t beacon_id,

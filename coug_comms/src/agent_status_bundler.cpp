@@ -51,31 +51,31 @@ AgentStatusBundlerNode::AgentStatusBundlerNode(const rclcpp::NodeOptions& option
 
   odom_sub_ = create_subscription<nav_msgs::msg::Odometry>(
       params_.odom_topic, rclcpp::SystemDefaultsQoS(),
-      [this](nav_msgs::msg::Odometry::SharedPtr msg) { odomCallback(msg); });
+      [this](const nav_msgs::msg::Odometry::ConstSharedPtr& msg) { odomCallback(msg); });
 
   depth_sub_ = create_subscription<nav_msgs::msg::Odometry>(
       params_.depth_topic, rclcpp::SystemDefaultsQoS(),
-      [this](nav_msgs::msg::Odometry::SharedPtr msg) { depthCallback(msg); });
+      [this](const nav_msgs::msg::Odometry::ConstSharedPtr& msg) { depthCallback(msg); });
 
   imu_sub_ = create_subscription<sensor_msgs::msg::Imu>(
       params_.imu_topic, rclcpp::SystemDefaultsQoS(),
-      [this](sensor_msgs::msg::Imu::SharedPtr msg) { imuCallback(msg); });
+      [this](const sensor_msgs::msg::Imu::ConstSharedPtr& msg) { imuCallback(msg); });
 
   status_pub_ = create_publisher<AgentStatus>(params_.status_topic, rclcpp::SystemDefaultsQoS());
 
   RCLCPP_INFO(get_logger(), "Initialization complete.");
 }
 
-void AgentStatusBundlerNode::odomCallback(const nav_msgs::msg::Odometry::SharedPtr& msg) {
+void AgentStatusBundlerNode::odomCallback(const nav_msgs::msg::Odometry::ConstSharedPtr& msg) {
   last_odom_ = msg;
   publishStatus();
 }
 
-void AgentStatusBundlerNode::depthCallback(const nav_msgs::msg::Odometry::SharedPtr& msg) {
+void AgentStatusBundlerNode::depthCallback(const nav_msgs::msg::Odometry::ConstSharedPtr& msg) {
   last_depth_ = msg;
 }
 
-void AgentStatusBundlerNode::imuCallback(const sensor_msgs::msg::Imu::SharedPtr& msg) {
+void AgentStatusBundlerNode::imuCallback(const sensor_msgs::msg::Imu::ConstSharedPtr& msg) {
   last_imu_ = msg;
 }
 

@@ -29,7 +29,7 @@ class AgentStatusStagerNode : public rclcpp::Node {
 
  private:
   // --- Callbacks ---
-  void statusCallback(const coug_interfaces::msg::AgentStatus::SharedPtr& msg);
+  void statusCallback(const coug_interfaces::msg::AgentStatus::ConstSharedPtr& msg);
 
   // --- ROS Interfaces ---
   rclcpp::Subscription<coug_interfaces::msg::AgentStatus>::SharedPtr status_sub_;

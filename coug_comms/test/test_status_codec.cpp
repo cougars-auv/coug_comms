@@ -66,7 +66,7 @@ TEST(StatusCodecTest, RoundTrip) {
   in.local_odometry.orientation = makeQuat(-0.1, 0.2, -0.3, 0.9);
   in.imu_orientation = makeQuat(0.3, -0.4, 0.1, 0.8);
   for (int i = 0; i < 6; ++i) {
-    in.odometry_covariance[static_cast<std::size_t>(i * kCovStride)] = 0.01 * (i + 1);
+    in.odometry_covariance[static_cast<std::size_t>(i) * kCovStride] = 0.01 * (i + 1);
   }
   in.odometry_covariance[0] = 1.0e-9;  // below kMinVariance, so the floor shows up
   in.odometry_covariance[35] = 1.0e6;  // above kMaxVariance, so the ceiling shows up
@@ -91,7 +91,7 @@ TEST(StatusCodecTest, RoundTrip) {
   EXPECT_NEAR(out.odometry_covariance[35], kMaxVariance, kMaxVariance * kVarianceTol);
   for (int i = 1; i < 5; ++i) {
     const double expected = 0.01 * (i + 1);
-    EXPECT_NEAR(out.odometry_covariance[static_cast<std::size_t>(i * kCovStride)], expected,
+    EXPECT_NEAR(out.odometry_covariance[static_cast<std::size_t>(i) * kCovStride], expected,
                 expected * kVarianceTol);
   }
   for (const int off_diagonal : {1, 6, 11, 34}) {

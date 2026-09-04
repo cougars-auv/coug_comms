@@ -33,11 +33,11 @@ class AgentStatusBundlerNode : public rclcpp::Node {
 
  private:
   // --- Callbacks ---
-  void odomCallback(const nav_msgs::msg::Odometry::SharedPtr& msg);
+  void odomCallback(const nav_msgs::msg::Odometry::ConstSharedPtr& msg);
 
-  void depthCallback(const nav_msgs::msg::Odometry::SharedPtr& msg);
+  void depthCallback(const nav_msgs::msg::Odometry::ConstSharedPtr& msg);
 
-  void imuCallback(const sensor_msgs::msg::Imu::SharedPtr& msg);
+  void imuCallback(const sensor_msgs::msg::Imu::ConstSharedPtr& msg);
 
   // --- Helpers ---
   void publishStatus();
@@ -56,9 +56,9 @@ class AgentStatusBundlerNode : public rclcpp::Node {
   agent_status_bundler_node::Params params_;
 
   // --- State ---
-  nav_msgs::msg::Odometry::SharedPtr last_odom_;
-  nav_msgs::msg::Odometry::SharedPtr last_depth_;
-  sensor_msgs::msg::Imu::SharedPtr last_imu_;
+  nav_msgs::msg::Odometry::ConstSharedPtr last_odom_;
+  nav_msgs::msg::Odometry::ConstSharedPtr last_depth_;
+  sensor_msgs::msg::Imu::ConstSharedPtr last_imu_;
 };
 
 }  // namespace coug_comms

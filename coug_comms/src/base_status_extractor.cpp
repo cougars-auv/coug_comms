@@ -53,7 +53,7 @@ BaseStatusExtractorNode::BaseStatusExtractorNode(const rclcpp::NodeOptions& opti
 }
 
 void BaseStatusExtractorNode::statusCallback(const std::string& agent_name,
-                                             const AgentStatus::SharedPtr& msg) {
+                                             const AgentStatus::ConstSharedPtr& msg) {
   auto it = agents_.find(agent_name);
   if (it == agents_.end()) {
     return;
@@ -78,14 +78,16 @@ void BaseStatusExtractorNode::registerAgent(const std::string& agent_name) {
 
   agent.status_sub = create_subscription<AgentStatus>(
       build_name(agent_name, params_.status_topic), rclcpp::SystemDefaultsQoS(),
-      [this, agent_name](const AgentStatus::SharedPtr msg) { statusCallback(agent_name, msg); });
+      [this, agent_name](const AgentStatus::ConstSharedPtr& msg) {
+        statusCallback(agent_name, msg);
+      });
 
   agents_.emplace(agent_name, std::move(agent));
   RCLCPP_INFO(get_logger(), "Registered agent '%s'.", agent_name.c_str());
 }
 
 auto BaseStatusExtractorNode::convertToOdom(const std::string& agent_name,
-                                            const AgentStatus::SharedPtr& msg)
+                                            const AgentStatus::ConstSharedPtr& msg)
     -> nav_msgs::msg::Odometry {
   nav_msgs::msg::Odometry odom_msg;
   odom_msg.header = msg->header;
@@ -96,7 +98,7 @@ auto BaseStatusExtractorNode::convertToOdom(const std::string& agent_name,
   return odom_msg;
 }
 
-auto BaseStatusExtractorNode::convertToDepth(const AgentStatus::SharedPtr& msg)
+auto BaseStatusExtractorNode::convertToDepth(const AgentStatus::ConstSharedPtr& msg)
     -> nav_msgs::msg::Odometry {
   nav_msgs::msg::Odometry depth_msg;
   depth_msg.header = msg->header;
@@ -104,7 +106,7 @@ auto BaseStatusExtractorNode::convertToDepth(const AgentStatus::SharedPtr& msg)
   return depth_msg;
 }
 
-auto BaseStatusExtractorNode::convertToImu(const AgentStatus::SharedPtr& msg)
+auto BaseStatusExtractorNode::convertToImu(const AgentStatus::ConstSharedPtr& msg)
     -> sensor_msgs::msg::Imu {
   sensor_msgs::msg::Imu imu_msg;
   imu_msg.header = msg->header;

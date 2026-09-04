@@ -14,8 +14,6 @@
 
 #include "coug_comms/base_status_poller.hpp"
 
-#include <math.h>
-
 #include <algorithm>
 #include <chrono>
 #include <cmath>
@@ -73,11 +71,13 @@ BaseStatusPollerNode::BaseStatusPollerNode(const rclcpp::NodeOptions& options)
 
   modem_rec_sub_ = create_subscription<seatrac_interfaces::msg::ModemRec>(
       params_.modem_rec_topic, rclcpp::SystemDefaultsQoS(),
-      [this](seatrac_interfaces::msg::ModemRec::SharedPtr msg) { modemRecCallback(msg); });
+      [this](const seatrac_interfaces::msg::ModemRec::ConstSharedPtr& msg) {
+        modemRecCallback(msg);
+      });
 
   modem_cmd_update_sub_ = create_subscription<seatrac_interfaces::msg::ModemCmdUpdate>(
       params_.modem_cmd_update_topic, rclcpp::SystemDefaultsQoS(),
-      [this](seatrac_interfaces::msg::ModemCmdUpdate::SharedPtr msg) {
+      [this](const seatrac_interfaces::msg::ModemCmdUpdate::ConstSharedPtr& msg) {
         modemCmdUpdateCallback(msg);
       });
 
@@ -93,9 +93,9 @@ BaseStatusPollerNode::BaseStatusPollerNode(const rclcpp::NodeOptions& options)
   }
 
   for (const auto& agent_name : params_.agent_list) {
-    int const raw_id = this->declare_parameter<int>("beacon_ids." + agent_name, -1);
+    int64_t const raw_id = this->declare_parameter<int64_t>("beacon_ids." + agent_name, -1);
     if (raw_id < 0 || raw_id > kMaxBeaconId) {
-      RCLCPP_ERROR(get_logger(), "Missing or invalid beacon_ids.%s (got %d) — skipping '%s'.",
+      RCLCPP_ERROR(get_logger(), "Missing or invalid beacon_ids.%s (got %ld) — skipping '%s'.",
                    agent_name.c_str(), raw_id, agent_name.c_str());
       continue;
     }
@@ -118,7 +118,7 @@ void BaseStatusPollerNode::tickCallback() {
 }
 
 void BaseStatusPollerNode::modemRecCallback(
-    const seatrac_interfaces::msg::ModemRec::SharedPtr& msg) {
+    const seatrac_interfaces::msg::ModemRec::ConstSharedPtr& msg) {
   if (!awaiting_response_ || !msg->local_flag || msg->src_id != pending_beacon_) {
     return;
   }
@@ -156,7 +156,7 @@ void BaseStatusPollerNode::modemRecCallback(
 }
 
 void BaseStatusPollerNode::modemCmdUpdateCallback(
-    const seatrac_interfaces::msg::ModemCmdUpdate::SharedPtr& msg) {
+    const seatrac_interfaces::msg::ModemCmdUpdate::ConstSharedPtr& msg) {
   if (!awaiting_response_ || msg->target_id != pending_beacon_) {
     return;
   }
@@ -180,7 +180,7 @@ void BaseStatusPollerNode::registerAgent(const std::string& agent_name, uint8_t 
   if (params_.enable_direct_comms || agent.is_lead) {
     agent.direct_status_sub = create_subscription<AgentStatus>(
         build_name(agent_name, params_.direct_status_topic), rclcpp::SystemDefaultsQoS(),
-        [this, beacon_id](const AgentStatus::SharedPtr msg) {
+        [this, beacon_id](const AgentStatus::ConstSharedPtr& msg) {
           auto it = agents_.find(beacon_id);
           if (it == agents_.end()) {
             return;
