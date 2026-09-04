@@ -14,9 +14,27 @@
 
 #include "coug_comms/agent_status_bundler.hpp"
 
+#include <functional>
+#include <memory>
+#include <rclcpp/logging.hpp>
+#include <rclcpp/node.hpp>
+#include <rclcpp/node_options.hpp>
 #include <rclcpp_components/register_node_macro.hpp>
 #include <string>
+#include <tf2/LinearMath/Quaternion.hpp>
+#include <tf2/convert.hpp>
+#include <tf2/exceptions.hpp>
+#include <tf2/time.hpp>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
+#include <tf2_ros/buffer.hpp>
+#include <tf2_ros/transform_listener.hpp>
+
+#include "coug_comms/agent_status_bundler_parameters.hpp"
+#include "coug_interfaces/msg/agent_status.hpp"
+#include "geometry_msgs/msg/pose.hpp"
+#include "geometry_msgs/msg/transform_stamped.hpp"
+#include "nav_msgs/msg/odometry.hpp"
+#include "sensor_msgs/msg/imu.hpp"
 
 namespace coug_comms {
 
@@ -33,36 +51,38 @@ AgentStatusBundlerNode::AgentStatusBundlerNode(const rclcpp::NodeOptions& option
 
   odom_sub_ = create_subscription<nav_msgs::msg::Odometry>(
       params_.odom_topic, rclcpp::SystemDefaultsQoS(),
-      std::bind(&AgentStatusBundlerNode::odomCallback, this, std::placeholders::_1));
+      [this](nav_msgs::msg::Odometry::SharedPtr msg) { odomCallback(msg); });
 
   depth_sub_ = create_subscription<nav_msgs::msg::Odometry>(
       params_.depth_topic, rclcpp::SystemDefaultsQoS(),
-      std::bind(&AgentStatusBundlerNode::depthCallback, this, std::placeholders::_1));
+      [this](nav_msgs::msg::Odometry::SharedPtr msg) { depthCallback(msg); });
 
   imu_sub_ = create_subscription<sensor_msgs::msg::Imu>(
       params_.imu_topic, rclcpp::SystemDefaultsQoS(),
-      std::bind(&AgentStatusBundlerNode::imuCallback, this, std::placeholders::_1));
+      [this](sensor_msgs::msg::Imu::SharedPtr msg) { imuCallback(msg); });
 
   status_pub_ = create_publisher<AgentStatus>(params_.status_topic, rclcpp::SystemDefaultsQoS());
 
   RCLCPP_INFO(get_logger(), "Initialization complete.");
 }
 
-void AgentStatusBundlerNode::odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg) {
+void AgentStatusBundlerNode::odomCallback(const nav_msgs::msg::Odometry::SharedPtr& msg) {
   last_odom_ = msg;
   publishStatus();
 }
 
-void AgentStatusBundlerNode::depthCallback(const nav_msgs::msg::Odometry::SharedPtr msg) {
+void AgentStatusBundlerNode::depthCallback(const nav_msgs::msg::Odometry::SharedPtr& msg) {
   last_depth_ = msg;
 }
 
-void AgentStatusBundlerNode::imuCallback(const sensor_msgs::msg::Imu::SharedPtr msg) {
+void AgentStatusBundlerNode::imuCallback(const sensor_msgs::msg::Imu::SharedPtr& msg) {
   last_imu_ = msg;
 }
 
 void AgentStatusBundlerNode::publishStatus() {
-  if (!last_odom_) return;
+  if (!last_odom_) {
+    return;
+  }
 
   AgentStatus status;
   status.header.stamp = now();
@@ -72,7 +92,7 @@ void AgentStatusBundlerNode::publishStatus() {
 
   if (last_depth_) {
     // Transform depth data into the base frame
-    std::string depth_frame = last_depth_->child_frame_id;
+    std::string const depth_frame = last_depth_->child_frame_id;
 
     geometry_msgs::msg::TransformStamped depth_T_base_tf;
     try {
@@ -92,7 +112,8 @@ void AgentStatusBundlerNode::publishStatus() {
       map_T_depth_tf.transform.translation.y = last_depth_->pose.pose.position.y;
       map_T_depth_tf.transform.translation.z = last_depth_->pose.pose.position.z;
 
-      tf2::Quaternion map_R_base, depth_R_base;
+      tf2::Quaternion map_R_base;
+      tf2::Quaternion depth_R_base;
       tf2::fromMsg(last_odom_->pose.pose.orientation, map_R_base);
       tf2::fromMsg(depth_T_base_tf.transform.rotation, depth_R_base);
 
@@ -114,14 +135,15 @@ void AgentStatusBundlerNode::publishStatus() {
 
   if (last_imu_) {
     // Transform IMU data into the base frame
-    std::string imu_frame = last_imu_->header.frame_id;
+    std::string const imu_frame = last_imu_->header.frame_id;
 
     geometry_msgs::msg::TransformStamped imu_T_base_tf;
     try {
       imu_T_base_tf =
           tf_buffer_->lookupTransform(imu_frame, params_.base_frame, tf2::TimePointZero);
 
-      tf2::Quaternion map_R_imu, imu_R_base;
+      tf2::Quaternion map_R_imu;
+      tf2::Quaternion imu_R_base;
       tf2::fromMsg(last_imu_->orientation, map_R_imu);
       tf2::fromMsg(imu_T_base_tf.transform.rotation, imu_R_base);
 

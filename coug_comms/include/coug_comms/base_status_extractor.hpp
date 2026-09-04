@@ -41,17 +41,19 @@ class BaseStatusExtractorNode : public rclcpp::Node {
 
   // --- Callbacks ---
   void statusCallback(const std::string& agent_name,
-                      const coug_interfaces::msg::AgentStatus::SharedPtr msg);
+                      const coug_interfaces::msg::AgentStatus::SharedPtr& msg);
 
   // --- Helpers ---
   void registerAgent(const std::string& agent_name);
 
-  nav_msgs::msg::Odometry convertToOdom(const std::string& agent_name,
-                                        const coug_interfaces::msg::AgentStatus::SharedPtr msg);
+  static nav_msgs::msg::Odometry convertToOdom(
+      const std::string& agent_name, const coug_interfaces::msg::AgentStatus::SharedPtr& msg);
 
-  nav_msgs::msg::Odometry convertToDepth(const coug_interfaces::msg::AgentStatus::SharedPtr msg);
+  static nav_msgs::msg::Odometry convertToDepth(
+      const coug_interfaces::msg::AgentStatus::SharedPtr& msg);
 
-  sensor_msgs::msg::Imu convertToImu(const coug_interfaces::msg::AgentStatus::SharedPtr msg);
+  static sensor_msgs::msg::Imu convertToImu(
+      const coug_interfaces::msg::AgentStatus::SharedPtr& msg);
 
   // --- Parameters ---
   std::shared_ptr<base_status_extractor_node::ParamListener> param_listener_;

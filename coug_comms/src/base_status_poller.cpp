@@ -14,14 +14,33 @@
 
 #include "coug_comms/base_status_poller.hpp"
 
-#include <algorithm>
-#include <cmath>
-#include <geometry_msgs/msg/transform_stamped.hpp>
-#include <rclcpp_components/register_node_macro.hpp>
+#include <math.h>
 
+#include <algorithm>
+#include <chrono>
+#include <cmath>
+#include <cstdint>
+#include <diagnostic_updater/diagnostic_status_wrapper.hpp>
+#include <functional>
+#include <geometry_msgs/msg/transform_stamped.hpp>
+#include <memory>
+#include <rclcpp/logging.hpp>
+#include <rclcpp/node.hpp>
+#include <rclcpp/node_options.hpp>
+#include <rclcpp_components/register_node_macro.hpp>
+#include <string>
+#include <tf2_ros/transform_broadcaster.hpp>
+#include <utility>
+
+#include "coug_comms/base_status_poller_parameters.hpp"
 #include "coug_comms/utils/protocol_enums.hpp"
 #include "coug_comms/utils/seatrac_enums.hpp"
 #include "coug_comms/utils/status_codec.hpp"
+#include "coug_interfaces/msg/agent_status.hpp"
+#include "diagnostic_msgs/msg/diagnostic_status.hpp"
+#include "seatrac_interfaces/msg/modem_cmd_update.hpp"
+#include "seatrac_interfaces/msg/modem_rec.hpp"
+#include "seatrac_interfaces/msg/modem_send.hpp"
 
 namespace coug_comms {
 
@@ -38,7 +57,7 @@ constexpr double kDecimetersToMeters = 0.1;
 constexpr double kSeatracToRad = M_PI / 1800.0;
 constexpr int kMaxBeaconId = 15;
 
-std::string build_name(const std::string& agent, const std::string& sub) {
+auto build_name(const std::string& agent, const std::string& sub) -> std::string {
   return "/" + agent + "/" + sub;
 }
 
@@ -54,25 +73,27 @@ BaseStatusPollerNode::BaseStatusPollerNode(const rclcpp::NodeOptions& options)
 
   modem_rec_sub_ = create_subscription<seatrac_interfaces::msg::ModemRec>(
       params_.modem_rec_topic, rclcpp::SystemDefaultsQoS(),
-      std::bind(&BaseStatusPollerNode::modemRecCallback, this, std::placeholders::_1));
+      [this](seatrac_interfaces::msg::ModemRec::SharedPtr msg) { modemRecCallback(msg); });
 
   modem_cmd_update_sub_ = create_subscription<seatrac_interfaces::msg::ModemCmdUpdate>(
       params_.modem_cmd_update_topic, rclcpp::SystemDefaultsQoS(),
-      std::bind(&BaseStatusPollerNode::modemCmdUpdateCallback, this, std::placeholders::_1));
+      [this](seatrac_interfaces::msg::ModemCmdUpdate::SharedPtr msg) {
+        modemCmdUpdateCallback(msg);
+      });
 
   modem_send_pub_ = create_publisher<seatrac_interfaces::msg::ModemSend>(
       params_.modem_send_topic, rclcpp::SystemDefaultsQoS());
 
   std::string prefix;
   if (params_.publish_diagnostics) {
-    std::string ns = this->get_namespace();
-    std::string clean_ns = (ns == "/") ? "" : ns;
+    std::string const ns = this->get_namespace();
+    std::string const clean_ns = (ns == "/") ? "" : ns;
     diagnostic_updater_.setHardwareID(clean_ns + "/base_status_poller_node");
     prefix = clean_ns.empty() ? "" : "[" + clean_ns + "] ";
   }
 
   for (const auto& agent_name : params_.agent_list) {
-    int raw_id = this->declare_parameter<int>("beacon_ids." + agent_name, -1);
+    int const raw_id = this->declare_parameter<int>("beacon_ids." + agent_name, -1);
     if (raw_id < 0 || raw_id > kMaxBeaconId) {
       RCLCPP_ERROR(get_logger(), "Missing or invalid beacon_ids.%s (got %d) — skipping '%s'.",
                    agent_name.c_str(), raw_id, agent_name.c_str());
@@ -83,7 +104,7 @@ BaseStatusPollerNode::BaseStatusPollerNode(const rclcpp::NodeOptions& options)
 
   next_poll_allowed_ = now();
   tick_timer_ = create_wall_timer(std::chrono::duration<double>(params_.tick_period_sec),
-                                  std::bind(&BaseStatusPollerNode::tickCallback, this));
+                                  [this] { tickCallback(); });
 
   RCLCPP_INFO(get_logger(), "Initialization complete.");
 }
@@ -97,8 +118,10 @@ void BaseStatusPollerNode::tickCallback() {
 }
 
 void BaseStatusPollerNode::modemRecCallback(
-    const seatrac_interfaces::msg::ModemRec::SharedPtr msg) {
-  if (!awaiting_response_ || !msg->local_flag || msg->src_id != pending_beacon_) return;
+    const seatrac_interfaces::msg::ModemRec::SharedPtr& msg) {
+  if (!awaiting_response_ || !msg->local_flag || msg->src_id != pending_beacon_) {
+    return;
+  }
 
   auto it = agents_.find(pending_beacon_);
   if (it == agents_.end()) {
@@ -133,9 +156,13 @@ void BaseStatusPollerNode::modemRecCallback(
 }
 
 void BaseStatusPollerNode::modemCmdUpdateCallback(
-    const seatrac_interfaces::msg::ModemCmdUpdate::SharedPtr msg) {
-  if (!awaiting_response_ || msg->target_id != pending_beacon_) return;
-  if (msg->command_status_code != CST_XCVR_RESP_TIMEOUT) return;
+    const seatrac_interfaces::msg::ModemCmdUpdate::SharedPtr& msg) {
+  if (!awaiting_response_ || msg->target_id != pending_beacon_) {
+    return;
+  }
+  if (msg->command_status_code != CST_XCVR_RESP_TIMEOUT) {
+    return;
+  }
 
   failPendingRequest("driver-level response timeout");
 }
@@ -155,7 +182,9 @@ void BaseStatusPollerNode::registerAgent(const std::string& agent_name, uint8_t 
         build_name(agent_name, params_.direct_status_topic), rclcpp::SystemDefaultsQoS(),
         [this, beacon_id](const AgentStatus::SharedPtr msg) {
           auto it = agents_.find(beacon_id);
-          if (it == agents_.end()) return;
+          if (it == agents_.end()) {
+            return;
+          }
           it->second.last_direct_heartbeat_sec = now().seconds();
           publishStatus(it->second, *msg, "DIRECT");
         });
@@ -177,8 +206,12 @@ void BaseStatusPollerNode::registerAgent(const std::string& agent_name, uint8_t 
 }
 
 void BaseStatusPollerNode::pollNextIfReady() {
-  if (awaiting_response_ || beacon_order_.empty()) return;
-  if (now() < next_poll_allowed_) return;
+  if (awaiting_response_ || beacon_order_.empty()) {
+    return;
+  }
+  if (now() < next_poll_allowed_) {
+    return;
+  }
 
   AgentEntry& agent = agents_.at(beacon_order_[next_beacon_idx_]);
   next_beacon_idx_ = (next_beacon_idx_ + 1) % beacon_order_.size();
@@ -265,13 +298,16 @@ void BaseStatusPollerNode::checkAgentPollStatus(diagnostic_updater::DiagnosticSt
                                                 uint8_t beacon_id) {
   const AgentEntry& agent = agents_.at(beacon_id);
 
-  double direct_heartbeat_age = (agent.last_direct_heartbeat_sec > 0.0)
-                                    ? (now().seconds() - agent.last_direct_heartbeat_sec)
-                                    : -1.0;
+  double const direct_heartbeat_age = (agent.last_direct_heartbeat_sec > 0.0)
+                                          ? (now().seconds() - agent.last_direct_heartbeat_sec)
+                                          : -1.0;
   stat.add("Time Since Direct Heartbeat (s)", direct_heartbeat_age);
 
-  double time_since = (agent.responses > 0) ? (now() - agent.last_response_time).seconds() : -1.0;
-  if (agent.responses > 0) stat.add("Last Transport", agent.last_transport);
+  double const time_since =
+      (agent.responses > 0) ? (now() - agent.last_response_time).seconds() : -1.0;
+  if (agent.responses > 0) {
+    stat.add("Last Transport", agent.last_transport);
+  }
   stat.add("Time Since Last (s)", time_since);
 
   if (agent.responses == 0 || time_since > params_.diagnostic_timeout_sec) {

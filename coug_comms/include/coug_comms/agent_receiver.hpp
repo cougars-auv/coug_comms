@@ -40,10 +40,11 @@ class AgentReceiverNode : public rclcpp::Node {
   };
 
   // --- Callbacks ---
-  void modemRecCallback(const seatrac_interfaces::msg::ModemRec::SharedPtr msg);
+  void modemRecCallback(const seatrac_interfaces::msg::ModemRec::SharedPtr& msg);
 
   // --- Helpers ---
-  void callService(rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr client, utils::MsgId msg);
+  void callService(const rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr& client,
+                   utils::MsgId msg);
 
   void recordServiceResult(const std::string& service, const std::string& transport,
                            utils::ServiceOutcome outcome);

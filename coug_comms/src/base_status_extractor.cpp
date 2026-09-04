@@ -14,10 +14,18 @@
 
 #include "coug_comms/base_status_extractor.hpp"
 
+#include <memory>
+#include <rclcpp/logging.hpp>
+#include <rclcpp/node.hpp>
+#include <rclcpp/node_options.hpp>
 #include <rclcpp_components/register_node_macro.hpp>
-#include <vector>
+#include <string>
+#include <utility>
 
 #include "coug_comms/base_status_extractor_parameters.hpp"
+#include "coug_interfaces/msg/agent_status.hpp"
+#include "nav_msgs/msg/odometry.hpp"
+#include "sensor_msgs/msg/imu.hpp"
 
 namespace coug_comms {
 
@@ -25,7 +33,7 @@ using coug_interfaces::msg::AgentStatus;
 
 namespace {
 
-std::string build_name(const std::string& agent, const std::string& sub) {
+auto build_name(const std::string& agent, const std::string& sub) -> std::string {
   return "/" + agent + "/" + sub;
 }
 
@@ -45,7 +53,7 @@ BaseStatusExtractorNode::BaseStatusExtractorNode(const rclcpp::NodeOptions& opti
 }
 
 void BaseStatusExtractorNode::statusCallback(const std::string& agent_name,
-                                             const AgentStatus::SharedPtr msg) {
+                                             const AgentStatus::SharedPtr& msg) {
   auto it = agents_.find(agent_name);
   if (it == agents_.end()) {
     return;
@@ -76,8 +84,9 @@ void BaseStatusExtractorNode::registerAgent(const std::string& agent_name) {
   RCLCPP_INFO(get_logger(), "Registered agent '%s'.", agent_name.c_str());
 }
 
-nav_msgs::msg::Odometry BaseStatusExtractorNode::convertToOdom(const std::string& agent_name,
-                                                               const AgentStatus::SharedPtr msg) {
+auto BaseStatusExtractorNode::convertToOdom(const std::string& agent_name,
+                                            const AgentStatus::SharedPtr& msg)
+    -> nav_msgs::msg::Odometry {
   nav_msgs::msg::Odometry odom_msg;
   odom_msg.header = msg->header;
   odom_msg.header.frame_id = "map";
@@ -87,14 +96,16 @@ nav_msgs::msg::Odometry BaseStatusExtractorNode::convertToOdom(const std::string
   return odom_msg;
 }
 
-nav_msgs::msg::Odometry BaseStatusExtractorNode::convertToDepth(const AgentStatus::SharedPtr msg) {
+auto BaseStatusExtractorNode::convertToDepth(const AgentStatus::SharedPtr& msg)
+    -> nav_msgs::msg::Odometry {
   nav_msgs::msg::Odometry depth_msg;
   depth_msg.header = msg->header;
   depth_msg.pose.pose.position.z = msg->pressure_depth;
   return depth_msg;
 }
 
-sensor_msgs::msg::Imu BaseStatusExtractorNode::convertToImu(const AgentStatus::SharedPtr msg) {
+auto BaseStatusExtractorNode::convertToImu(const AgentStatus::SharedPtr& msg)
+    -> sensor_msgs::msg::Imu {
   sensor_msgs::msg::Imu imu_msg;
   imu_msg.header = msg->header;
   imu_msg.orientation = msg->imu_orientation;

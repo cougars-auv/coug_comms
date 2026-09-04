@@ -14,7 +14,23 @@
 
 #include "coug_comms/agent_receiver.hpp"
 
+#include <cstddef>
+#include <diagnostic_updater/diagnostic_status_wrapper.hpp>
+#include <exception>
+#include <functional>
+#include <memory>
+#include <rclcpp/client.hpp>
+#include <rclcpp/logging.hpp>
+#include <rclcpp/node.hpp>
+#include <rclcpp/node_options.hpp>
 #include <rclcpp_components/register_node_macro.hpp>
+
+#include "coug_comms/agent_receiver_parameters.hpp"
+#include "coug_comms/utils/protocol_enums.hpp"
+#include "coug_comms/utils/service_enums.hpp"
+#include "diagnostic_msgs/msg/diagnostic_status.hpp"
+#include "seatrac_interfaces/msg/modem_rec.hpp"
+#include "std_srvs/srv/trigger.hpp"
 
 namespace coug_comms {
 
@@ -30,7 +46,7 @@ AgentReceiverNode::AgentReceiverNode(const rclcpp::NodeOptions& options)
 
   modem_rec_sub_ = create_subscription<seatrac_interfaces::msg::ModemRec>(
       params_.modem_rec_topic, rclcpp::SystemDefaultsQoS(),
-      std::bind(&AgentReceiverNode::modemRecCallback, this, std::placeholders::_1));
+      [this](seatrac_interfaces::msg::ModemRec::SharedPtr msg) { modemRecCallback(msg); });
 
   start_client_ = create_client<std_srvs::srv::Trigger>(params_.start_service);
   stop_client_ = create_client<std_srvs::srv::Trigger>(params_.stop_service);
@@ -41,21 +57,23 @@ AgentReceiverNode::AgentReceiverNode(const rclcpp::NodeOptions& options)
       create_client<std_srvs::srv::Trigger>(params_.emergency_surface_service);
 
   if (params_.publish_diagnostics) {
-    std::string ns = this->get_namespace();
-    std::string clean_ns = (ns == "/") ? "" : ns;
+    std::string const ns = this->get_namespace();
+    std::string const clean_ns = (ns == "/") ? "" : ns;
     diagnostic_updater_.setHardwareID(clean_ns + "/agent_receiver_node");
 
-    std::string prefix = clean_ns.empty() ? "" : "[" + clean_ns + "] ";
+    std::string const prefix = clean_ns.empty() ? "" : "[" + clean_ns + "] ";
 
-    std::string service_task = prefix + "Service Status";
+    std::string const service_task = prefix + "Service Status";
     diagnostic_updater_.add(service_task, this, &AgentReceiverNode::checkServiceStatus);
   }
 
   RCLCPP_INFO(get_logger(), "Initialization complete.");
 }
 
-void AgentReceiverNode::modemRecCallback(const seatrac_interfaces::msg::ModemRec::SharedPtr msg) {
-  if (!msg->local_flag || msg->packet_len < 1) return;
+void AgentReceiverNode::modemRecCallback(const seatrac_interfaces::msg::ModemRec::SharedPtr& msg) {
+  if (!msg->local_flag || msg->packet_len < 1) {
+    return;
+  }
 
   const auto msg_id = static_cast<MsgId>(msg->packet_data[0]);
   rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr client;
@@ -86,7 +104,7 @@ void AgentReceiverNode::modemRecCallback(const seatrac_interfaces::msg::ModemRec
   callService(client, msg_id);
 }
 
-void AgentReceiverNode::callService(rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr client,
+void AgentReceiverNode::callService(const rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr& client,
                                     MsgId msg) {
   const std::string service = toString(msg);
   if (!client->service_is_ready()) {

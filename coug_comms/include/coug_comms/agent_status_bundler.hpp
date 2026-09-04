@@ -33,11 +33,11 @@ class AgentStatusBundlerNode : public rclcpp::Node {
 
  private:
   // --- Callbacks ---
-  void odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg);
+  void odomCallback(const nav_msgs::msg::Odometry::SharedPtr& msg);
 
-  void depthCallback(const nav_msgs::msg::Odometry::SharedPtr msg);
+  void depthCallback(const nav_msgs::msg::Odometry::SharedPtr& msg);
 
-  void imuCallback(const sensor_msgs::msg::Imu::SharedPtr msg);
+  void imuCallback(const sensor_msgs::msg::Imu::SharedPtr& msg);
 
   // --- Helpers ---
   void publishStatus();
