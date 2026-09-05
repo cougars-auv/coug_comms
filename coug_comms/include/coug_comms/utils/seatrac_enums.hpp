@@ -302,7 +302,7 @@ enum CST_E : uint8_t {
                                   // message).
   CST_XCVR_ID_REJECTED = 0x31,    // Returned if the received message did not
                                   // match the specified transceiver ID (and
-                                  // wasn t a Sent-To-All), and the message
+                                  // wasn't a Sent-To-All), and the message
                                   // has been rejected.
   CST_XCVR_CSUM_ERROR = 0x32,     // Returned if received acoustic message's
                                   // checksum was invalid, and the message has

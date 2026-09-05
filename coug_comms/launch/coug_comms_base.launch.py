@@ -71,7 +71,8 @@ def launch_setup(context: LaunchContext, *args: Any, **kwargs: Any) -> list[Node
         try:
             with open(path) as config_file:
                 config = yaml.safe_load(config_file)
-            return config[top_key]["coug_comms_base_launch"]["ros__parameters"]
+            params = config[top_key]["coug_comms_base_launch"]["ros__parameters"]
+            return dict(params)
         except (KeyError, TypeError, OSError):
             return {}
 
@@ -103,7 +104,7 @@ def launch_setup(context: LaunchContext, *args: Any, **kwargs: Any) -> list[Node
                     "lead_agent": lead_agent,
                     "enable_direct_comms": enable_direct_comms,
                     "enable_acoustic_comms": enable_acoustic_comms,
-                    **dispatcher_modem_topics,
+                    **dispatcher_modem_topics,  # type: ignore[dict-item]
                 },
             ],
         ),
@@ -121,7 +122,7 @@ def launch_setup(context: LaunchContext, *args: Any, **kwargs: Any) -> list[Node
                     "enable_direct_comms": enable_direct_comms,
                     "enable_acoustic_comms": enable_acoustic_comms,
                     "parameter_frame": poller_modem_frame,
-                    **poller_modem_topics,
+                    **poller_modem_topics,  # type: ignore[dict-item]
                 },
             ],
         ),
