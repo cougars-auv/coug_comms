@@ -29,7 +29,7 @@ namespace coug_comms {
 
 class BaseStatusExtractorNode : public rclcpp::Node {
  public:
-  explicit BaseStatusExtractorNode(const rclcpp::NodeOptions& options);
+  explicit BaseStatusExtractorNode(rclcpp::NodeOptions const& options);
 
  private:
   struct AgentEntry {
@@ -40,20 +40,21 @@ class BaseStatusExtractorNode : public rclcpp::Node {
   };
 
   // --- Callbacks ---
-  void statusCallback(const std::string& agent_name,
-                      const coug_interfaces::msg::AgentStatus::ConstSharedPtr& msg);
+  void statusCallback(std::string const& agent_name,
+                      coug_interfaces::msg::AgentStatus::ConstSharedPtr const& msg);
 
   // --- Helpers ---
-  void registerAgent(const std::string& agent_name);
+  void registerAgent(std::string const& agent_name);
 
-  static nav_msgs::msg::Odometry convertToOdom(
-      const std::string& agent_name, const coug_interfaces::msg::AgentStatus::ConstSharedPtr& msg);
+  static auto convertToOdom(std::string const& agent_name,
+                            coug_interfaces::msg::AgentStatus::ConstSharedPtr const& msg)
+      -> nav_msgs::msg::Odometry;
 
-  static nav_msgs::msg::Odometry convertToDepth(
-      const coug_interfaces::msg::AgentStatus::ConstSharedPtr& msg);
+  static auto convertToDepth(coug_interfaces::msg::AgentStatus::ConstSharedPtr const& msg)
+      -> nav_msgs::msg::Odometry;
 
-  static sensor_msgs::msg::Imu convertToImu(
-      const coug_interfaces::msg::AgentStatus::ConstSharedPtr& msg);
+  static auto convertToImu(coug_interfaces::msg::AgentStatus::ConstSharedPtr const& msg)
+      -> sensor_msgs::msg::Imu;
 
   // --- Parameters ---
   std::shared_ptr<base_status_extractor_node::ParamListener> param_listener_;

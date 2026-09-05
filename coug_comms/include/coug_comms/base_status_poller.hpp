@@ -34,7 +34,7 @@ namespace coug_comms {
 
 class BaseStatusPollerNode : public rclcpp::Node {
  public:
-  explicit BaseStatusPollerNode(const rclcpp::NodeOptions& options);
+  explicit BaseStatusPollerNode(rclcpp::NodeOptions const& options);
 
  private:
   struct AgentEntry {
@@ -52,13 +52,13 @@ class BaseStatusPollerNode : public rclcpp::Node {
   // --- Callbacks ---
   void tickCallback();
 
-  void modemRecCallback(const seatrac_interfaces::msg::ModemRec::ConstSharedPtr& msg);
+  void modemRecCallback(seatrac_interfaces::msg::ModemRec::ConstSharedPtr const& msg);
 
-  void modemCmdUpdateCallback(const seatrac_interfaces::msg::ModemCmdUpdate::ConstSharedPtr& msg);
+  void modemCmdUpdateCallback(seatrac_interfaces::msg::ModemCmdUpdate::ConstSharedPtr const& msg);
 
   // --- Helpers ---
-  void registerAgent(const std::string& agent_name, uint8_t beacon_id,
-                     const std::string& diag_prefix);
+  void registerAgent(std::string const& agent_name, uint8_t beacon_id,
+                     std::string const& diag_prefix);
 
   void pollNextIfReady();
 
@@ -67,14 +67,14 @@ class BaseStatusPollerNode : public rclcpp::Node {
   void sendAcousticPoll(AgentEntry& agent);
 
   void publishStatus(AgentEntry& agent, coug_interfaces::msg::AgentStatus status,
-                     const std::string& transport);
+                     std::string const& transport);
 
   void finishPendingRequest();
 
-  void failPendingRequest(const std::string& reason);
+  void failPendingRequest(std::string const& reason);
 
-  void publishPolledTransform(const AgentEntry& agent,
-                              const seatrac_interfaces::msg::ModemRec& msg);
+  void publishPolledTransform(AgentEntry const& agent,
+                              seatrac_interfaces::msg::ModemRec const& msg);
 
   // --- Diagnostics ---
   void checkAgentPollStatus(diagnostic_updater::DiagnosticStatusWrapper& stat, uint8_t beacon_id);

@@ -33,7 +33,7 @@ namespace coug_comms {
 
 class BaseDispatcherNode : public rclcpp::Node {
  public:
-  explicit BaseDispatcherNode(const rclcpp::NodeOptions& options);
+  explicit BaseDispatcherNode(rclcpp::NodeOptions const& options);
 
  private:
   struct ServiceSpec {
@@ -59,26 +59,26 @@ class BaseDispatcherNode : public rclcpp::Node {
   };
 
   // --- Helpers ---
-  void registerAgent(const std::string& agent_name, uint8_t beacon_id,
-                     const std::string& diag_prefix);
+  void registerAgent(std::string const& agent_name, uint8_t beacon_id,
+                     std::string const& diag_prefix);
 
   void handleServiceRequest(
       utils::MsgId msg, uint8_t beacon_id,
-      const rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr& service_handle,
-      const std::shared_ptr<rmw_request_id_t>& header);
+      rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr const& service_handle,
+      std::shared_ptr<rmw_request_id_t> const& header);
 
-  bool directServiceDispatch(
-      utils::MsgId msg, const AgentEntry& agent,
-      const rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr& service_handle,
-      const std::shared_ptr<rmw_request_id_t>& header);
+  auto directServiceDispatch(
+      utils::MsgId msg, AgentEntry const& agent,
+      rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr const& service_handle,
+      std::shared_ptr<rmw_request_id_t> const& header) -> bool;
 
   void acousticServiceDispatch(
-      utils::MsgId msg, const AgentEntry& agent,
-      const rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr& service_handle,
-      const std::shared_ptr<rmw_request_id_t>& header);
+      utils::MsgId msg, AgentEntry const& agent,
+      rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr const& service_handle,
+      std::shared_ptr<rmw_request_id_t> const& header);
 
-  void recordServiceResult(uint8_t beacon_id, const std::string& service,
-                           const std::string& transport, utils::ServiceOutcome outcome);
+  void recordServiceResult(uint8_t beacon_id, std::string const& service,
+                           std::string const& transport, utils::ServiceOutcome outcome);
 
   // --- Diagnostics ---
   void checkAgentServiceStatus(diagnostic_updater::DiagnosticStatusWrapper& stat,

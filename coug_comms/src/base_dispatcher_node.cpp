@@ -18,7 +18,7 @@
 
 #include "coug_comms/base_dispatcher.hpp"
 
-int main(int argc, char* argv[]) {
+auto main(int argc, char* argv[]) -> int {
   rclcpp::init(argc, argv);
   auto node = std::make_shared<coug_comms::BaseDispatcherNode>(rclcpp::NodeOptions());
   rclcpp::spin(node);

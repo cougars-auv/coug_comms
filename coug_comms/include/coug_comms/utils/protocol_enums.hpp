@@ -30,7 +30,7 @@ enum class MsgId : uint8_t {
   kStatusResponse = 0x31,
 };
 
-inline std::string toString(MsgId msg) {
+inline auto toString(MsgId msg) -> std::string {
   switch (msg) {
     case MsgId::kServiceStart:
       return "SRV_START";

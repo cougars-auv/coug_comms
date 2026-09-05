@@ -56,41 +56,41 @@ inline constexpr int32_t kQuatRange = 1 << kQuatBits;
 inline constexpr int32_t kQuatMax = kQuatRange / 2 - 1;
 inline constexpr double kQuatLimit = M_SQRT1_2;
 
-inline double roundClamp(double value, double min_value, double max_value) {
+inline auto roundClamp(double value, double min_value, double max_value) -> double {
   if (std::isnan(value)) {
     return 0.0;
   }
   return std::clamp(std::round(value), min_value, max_value);
 }
 
-inline int16_t encodeMeters(double meters) {
+inline auto encodeMeters(double meters) -> int16_t {
   return static_cast<int16_t>(roundClamp(meters * kCentimetersPerMeter,
                                          std::numeric_limits<int16_t>::lowest(),
                                          std::numeric_limits<int16_t>::max()));
 }
 
-inline double decodeMeters(int16_t counts) {
+inline auto decodeMeters(int16_t counts) -> double {
   return static_cast<double>(counts) / kCentimetersPerMeter;
 }
 
-inline double sanitizeVariance(double variance) {
+inline auto sanitizeVariance(double variance) -> double {
   if (!std::isfinite(variance) || variance <= 0.0) {
     return kMaxVariance;
   }
   return std::clamp(variance, kMinVariance, kMaxVariance);
 }
 
-inline uint16_t encodeVariance(double variance) {
-  const auto half = Eigen::half(static_cast<float>(sanitizeVariance(variance)));
+inline auto encodeVariance(double variance) -> uint16_t {
+  auto const half = Eigen::half(static_cast<float>(sanitizeVariance(variance)));
   return Eigen::numext::bit_cast<uint16_t>(half);
 }
 
-inline double decodeVariance(uint16_t bits) {
-  const auto half = Eigen::numext::bit_cast<Eigen::half>(bits);
+inline auto decodeVariance(uint16_t bits) -> double {
+  auto const half = Eigen::numext::bit_cast<Eigen::half>(bits);
   return sanitizeVariance(static_cast<double>(static_cast<float>(half)));
 }
 
-inline uint32_t encodeQuaternion(const geometry_msgs::msg::Quaternion& q) {
+inline auto encodeQuaternion(geometry_msgs::msg::Quaternion const& q) -> uint32_t {
   std::array<double, 4> q_vec = {q.x, q.y, q.z, q.w};
   double norm = std::sqrt(q_vec[0] * q_vec[0] + q_vec[1] * q_vec[1] + q_vec[2] * q_vec[2] +
                           q_vec[3] * q_vec[3]);
@@ -105,7 +105,7 @@ inline uint32_t encodeQuaternion(const geometry_msgs::msg::Quaternion& q) {
       largest_idx = i;
     }
   }
-  const double sign = (q_vec[largest_idx] < 0.0) ? -1.0 : 1.0;
+  double const sign = (q_vec[largest_idx] < 0.0) ? -1.0 : 1.0;
   for (double& component : q_vec) {
     component = component * sign / norm;
   }
@@ -116,15 +116,15 @@ inline uint32_t encodeQuaternion(const geometry_msgs::msg::Quaternion& q) {
       continue;
     }
     shift -= kQuatBits;
-    const auto counts =
+    auto const counts =
         static_cast<int32_t>(roundClamp(q_vec[i] / kQuatLimit * kQuatMax, -kQuatMax, kQuatMax));
     packed |= (static_cast<uint32_t>(counts) & (kQuatRange - 1)) << shift;
   }
   return packed;
 }
 
-inline geometry_msgs::msg::Quaternion decodeQuaternion(uint32_t packed) {
-  const int largest_idx = static_cast<int>(packed >> kQuatSelectorShift);
+inline auto decodeQuaternion(uint32_t packed) -> geometry_msgs::msg::Quaternion {
+  int const largest_idx = static_cast<int>(packed >> kQuatSelectorShift);
 
   std::array<double, 4> q_vec{};
   double sum_squares = 0.0;
@@ -133,7 +133,7 @@ inline geometry_msgs::msg::Quaternion decodeQuaternion(uint32_t packed) {
       continue;
     }
     shift -= kQuatBits;
-    int32_t counts = static_cast<int32_t>((packed >> shift) & (kQuatRange - 1));
+    auto counts = static_cast<int32_t>((packed >> shift) & (kQuatRange - 1));
     if (counts > kQuatMax) {  // Sign extend the 10-bit field
       counts -= kQuatRange;
     }
@@ -143,7 +143,7 @@ inline geometry_msgs::msg::Quaternion decodeQuaternion(uint32_t packed) {
   q_vec[largest_idx] = std::sqrt(std::max(0.0, 1.0 - sum_squares));
 
   // Already unit length unless the bits arrived corrupted and pushed the sum past one
-  const double norm = std::sqrt(sum_squares + q_vec[largest_idx] * q_vec[largest_idx]);
+  double const norm = std::sqrt(sum_squares + q_vec[largest_idx] * q_vec[largest_idx]);
 
   geometry_msgs::msg::Quaternion q;
   q.x = q_vec[0] / norm;
@@ -163,7 +163,7 @@ class PayloadCursor {
   }
 
   template <typename T>
-  T get(const DatPayload& payload) {
+  auto get(DatPayload const& payload) -> T {
     assert(offset_ + sizeof(T) <= payload.size());
     T value;
     std::memcpy(&value, payload.data() + offset_, sizeof(T));
@@ -171,17 +171,18 @@ class PayloadCursor {
     return value;
   }
 
-  [[nodiscard]] uint8_t offset() const { return static_cast<uint8_t>(offset_); }
+  [[nodiscard]] auto offset() const -> uint8_t { return static_cast<uint8_t>(offset_); }
 
  private:
   size_t offset_ = 0;
 };
 
-inline uint8_t encodeStatus(const coug_interfaces::msg::AgentStatus& status, DatPayload& payload) {
+inline auto encodeStatus(coug_interfaces::msg::AgentStatus const& status, DatPayload& payload)
+    -> uint8_t {
   PayloadCursor cursor;
   cursor.put<uint8_t>(payload, static_cast<uint8_t>(MsgId::kStatusResponse));
 
-  const auto& pose = status.local_odometry;
+  auto const& pose = status.local_odometry;
   cursor.put(payload, encodeMeters(pose.position.x));
   cursor.put(payload, encodeMeters(pose.position.y));
   cursor.put(payload, encodeMeters(pose.position.z));
@@ -199,8 +200,8 @@ inline uint8_t encodeStatus(const coug_interfaces::msg::AgentStatus& status, Dat
   return cursor.offset();
 }
 
-inline bool decodeStatus(const DatPayload& payload, uint8_t packet_len,
-                         coug_interfaces::msg::AgentStatus& status) {
+inline auto decodeStatus(DatPayload const& payload, uint8_t packet_len,
+                         coug_interfaces::msg::AgentStatus& status) -> bool {
   if (packet_len < kStatusPacketLen) {
     return false;
   }

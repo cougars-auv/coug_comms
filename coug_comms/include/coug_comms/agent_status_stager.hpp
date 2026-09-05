@@ -25,11 +25,11 @@ namespace coug_comms {
 
 class AgentStatusStagerNode : public rclcpp::Node {
  public:
-  explicit AgentStatusStagerNode(const rclcpp::NodeOptions& options);
+  explicit AgentStatusStagerNode(rclcpp::NodeOptions const& options);
 
  private:
   // --- Callbacks ---
-  void statusCallback(const coug_interfaces::msg::AgentStatus::ConstSharedPtr& msg);
+  void statusCallback(coug_interfaces::msg::AgentStatus::ConstSharedPtr const& msg);
 
   // --- ROS Interfaces ---
   rclcpp::Subscription<coug_interfaces::msg::AgentStatus>::SharedPtr status_sub_;

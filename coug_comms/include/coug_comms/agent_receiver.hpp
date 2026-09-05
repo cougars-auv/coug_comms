@@ -30,7 +30,7 @@ namespace coug_comms {
 
 class AgentReceiverNode : public rclcpp::Node {
  public:
-  explicit AgentReceiverNode(const rclcpp::NodeOptions& options);
+  explicit AgentReceiverNode(rclcpp::NodeOptions const& options);
 
  private:
   struct ServiceResult {
@@ -40,13 +40,13 @@ class AgentReceiverNode : public rclcpp::Node {
   };
 
   // --- Callbacks ---
-  void modemRecCallback(const seatrac_interfaces::msg::ModemRec::ConstSharedPtr& msg);
+  void modemRecCallback(seatrac_interfaces::msg::ModemRec::ConstSharedPtr const& msg);
 
   // --- Helpers ---
-  void callService(const rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr& client,
+  void callService(rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr const& client,
                    utils::MsgId msg);
 
-  void recordServiceResult(const std::string& service, const std::string& transport,
+  void recordServiceResult(std::string const& service, std::string const& transport,
                            utils::ServiceOutcome outcome);
 
   // --- Diagnostics ---

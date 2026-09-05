@@ -25,7 +25,7 @@ enum class ServiceOutcome : std::uint8_t {
   kQueued,
 };
 
-inline std::string toString(ServiceOutcome outcome) {
+inline auto toString(ServiceOutcome outcome) -> std::string {
   switch (outcome) {
     case ServiceOutcome::kSucceeded:
       return "SUCCEEDED";

@@ -36,8 +36,8 @@ constexpr double kMetersTol = 0.005;    // exactly half the 1 cm quantization st
 constexpr double kQuatTol = 0.0025;     // the rebuilt component stacks all three 0.0007 half-steps
 constexpr double kVarianceTol = 0.001;  // 2x margin on float16's ~0.05% worst-case relative error
 
-geometry_msgs::msg::Quaternion makeQuat(double x, double y, double z, double w) {
-  const double norm = std::sqrt(x * x + y * y + z * z + w * w);
+auto makeQuat(double x, double y, double z, double w) -> geometry_msgs::msg::Quaternion {
+  double const norm = std::sqrt(x * x + y * y + z * z + w * w);
   geometry_msgs::msg::Quaternion q;
   q.x = x / norm;
   q.y = y / norm;
@@ -46,8 +46,8 @@ geometry_msgs::msg::Quaternion makeQuat(double x, double y, double z, double w) 
   return q;
 }
 
-void expectQuatNear(const geometry_msgs::msg::Quaternion& actual,
-                    const geometry_msgs::msg::Quaternion& expected, const char* label) {
+void expectQuatNear(geometry_msgs::msg::Quaternion const& actual,
+                    geometry_msgs::msg::Quaternion const& expected, char const* label) {
   SCOPED_TRACE(label);
   EXPECT_NEAR(actual.x, expected.x, kQuatTol);
   EXPECT_NEAR(actual.y, expected.y, kQuatTol);
@@ -90,11 +90,11 @@ TEST(StatusCodecTest, RoundTrip) {
   EXPECT_NEAR(out.odometry_covariance[0], kMinVariance, kMinVariance * kVarianceTol);
   EXPECT_NEAR(out.odometry_covariance[35], kMaxVariance, kMaxVariance * kVarianceTol);
   for (int i = 1; i < 5; ++i) {
-    const double expected = 0.01 * (i + 1);
+    double const expected = 0.01 * (i + 1);
     EXPECT_NEAR(out.odometry_covariance[static_cast<std::size_t>(i) * kCovStride], expected,
                 expected * kVarianceTol);
   }
-  for (const int off_diagonal : {1, 6, 11, 34}) {
+  for (int const off_diagonal : {1, 6, 11, 34}) {
     EXPECT_DOUBLE_EQ(out.odometry_covariance[off_diagonal], 0.0) << "at " << off_diagonal;
   }
 
