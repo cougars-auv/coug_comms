@@ -18,7 +18,7 @@
 
 #include "coug_comms/base_status_extractor.hpp"
 
-auto main(int argc, char* argv[]) -> int {
+int main(int argc, char* argv[]) {
   rclcpp::init(argc, argv);
   auto node = std::make_shared<coug_comms::BaseStatusExtractorNode>(rclcpp::NodeOptions());
   rclcpp::spin(node);

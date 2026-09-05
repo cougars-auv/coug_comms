@@ -19,6 +19,7 @@
 #include <array>
 #include <cassert>
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
 #include <cstring>
 #include <limits>
@@ -56,7 +57,9 @@ inline constexpr int32_t kQuatMax = kQuatRange / 2 - 1;
 inline constexpr double kQuatLimit = M_SQRT1_2;
 
 inline double roundClamp(double value, double min_value, double max_value) {
-  if (std::isnan(value)) return 0.0;
+  if (std::isnan(value)) {
+    return 0.0;
+  }
   return std::clamp(std::round(value), min_value, max_value);
 }
 
@@ -71,7 +74,9 @@ inline double decodeMeters(int16_t counts) {
 }
 
 inline double sanitizeVariance(double variance) {
-  if (!std::isfinite(variance) || variance <= 0.0) return kMaxVariance;
+  if (!std::isfinite(variance) || variance <= 0.0) {
+    return kMaxVariance;
+  }
   return std::clamp(variance, kMinVariance, kMaxVariance);
 }
 
@@ -86,7 +91,7 @@ inline double decodeVariance(uint16_t bits) {
 }
 
 inline uint32_t encodeQuaternion(const geometry_msgs::msg::Quaternion& q) {
-  double q_vec[4] = {q.x, q.y, q.z, q.w};
+  std::array<double, 4> q_vec = {q.x, q.y, q.z, q.w};
   double norm = std::sqrt(q_vec[0] * q_vec[0] + q_vec[1] * q_vec[1] + q_vec[2] * q_vec[2] +
                           q_vec[3] * q_vec[3]);
   if (!std::isfinite(norm) || norm < 1.0e-9) {
@@ -96,14 +101,20 @@ inline uint32_t encodeQuaternion(const geometry_msgs::msg::Quaternion& q) {
 
   int largest_idx = 0;
   for (int i = 1; i < 4; ++i) {
-    if (std::fabs(q_vec[i]) > std::fabs(q_vec[largest_idx])) largest_idx = i;
+    if (std::fabs(q_vec[i]) > std::fabs(q_vec[largest_idx])) {
+      largest_idx = i;
+    }
   }
   const double sign = (q_vec[largest_idx] < 0.0) ? -1.0 : 1.0;
-  for (double& component : q_vec) component = component * sign / norm;
+  for (double& component : q_vec) {
+    component = component * sign / norm;
+  }
 
   uint32_t packed = static_cast<uint32_t>(largest_idx) << kQuatSelectorShift;
   for (int i = 0, shift = kQuatSelectorShift; i < 4; ++i) {
-    if (i == largest_idx) continue;
+    if (i == largest_idx) {
+      continue;
+    }
     shift -= kQuatBits;
     const auto counts =
         static_cast<int32_t>(roundClamp(q_vec[i] / kQuatLimit * kQuatMax, -kQuatMax, kQuatMax));
@@ -115,13 +126,17 @@ inline uint32_t encodeQuaternion(const geometry_msgs::msg::Quaternion& q) {
 inline geometry_msgs::msg::Quaternion decodeQuaternion(uint32_t packed) {
   const int largest_idx = static_cast<int>(packed >> kQuatSelectorShift);
 
-  double q_vec[4];
+  std::array<double, 4> q_vec{};
   double sum_squares = 0.0;
   for (int i = 0, shift = kQuatSelectorShift; i < 4; ++i) {
-    if (i == largest_idx) continue;
+    if (i == largest_idx) {
+      continue;
+    }
     shift -= kQuatBits;
     int32_t counts = static_cast<int32_t>((packed >> shift) & (kQuatRange - 1));
-    if (counts > kQuatMax) counts -= kQuatRange;  // Sign extend the 10-bit field
+    if (counts > kQuatMax) {  // Sign extend the 10-bit field
+      counts -= kQuatRange;
+    }
     q_vec[i] = static_cast<double>(counts) / kQuatMax * kQuatLimit;
     sum_squares += q_vec[i] * q_vec[i];
   }
@@ -156,7 +171,7 @@ class PayloadCursor {
     return value;
   }
 
-  uint8_t offset() const { return static_cast<uint8_t>(offset_); }
+  [[nodiscard]] uint8_t offset() const { return static_cast<uint8_t>(offset_); }
 
  private:
   size_t offset_ = 0;
@@ -173,7 +188,8 @@ inline uint8_t encodeStatus(const coug_interfaces::msg::AgentStatus& status, Dat
   cursor.put(payload, encodeQuaternion(pose.orientation));
 
   for (int i = 0; i < kCovDim; ++i) {
-    cursor.put(payload, encodeVariance(status.odometry_covariance[i * kCovStride]));
+    cursor.put(payload, encodeVariance(
+                            status.odometry_covariance[static_cast<std::size_t>(i) * kCovStride]));
   }
 
   cursor.put(payload, encodeMeters(status.pressure_depth));
@@ -185,9 +201,13 @@ inline uint8_t encodeStatus(const coug_interfaces::msg::AgentStatus& status, Dat
 
 inline bool decodeStatus(const DatPayload& payload, uint8_t packet_len,
                          coug_interfaces::msg::AgentStatus& status) {
-  if (packet_len < kStatusPacketLen) return false;
+  if (packet_len < kStatusPacketLen) {
+    return false;
+  }
   PayloadCursor cursor;
-  if (cursor.get<uint8_t>(payload) != static_cast<uint8_t>(MsgId::kStatusResponse)) return false;
+  if (cursor.get<uint8_t>(payload) != static_cast<uint8_t>(MsgId::kStatusResponse)) {
+    return false;
+  }
 
   auto& pose = status.local_odometry;
   pose.position.x = decodeMeters(cursor.get<int16_t>(payload));
@@ -197,7 +217,8 @@ inline bool decodeStatus(const DatPayload& payload, uint8_t packet_len,
 
   status.odometry_covariance.fill(0.0);
   for (int i = 0; i < kCovDim; ++i) {
-    status.odometry_covariance[i * kCovStride] = decodeVariance(cursor.get<uint16_t>(payload));
+    status.odometry_covariance[static_cast<std::size_t>(i) * kCovStride] =
+        decodeVariance(cursor.get<uint16_t>(payload));
   }
 
   status.pressure_depth = decodeMeters(cursor.get<int16_t>(payload));

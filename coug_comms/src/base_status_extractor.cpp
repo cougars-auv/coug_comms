@@ -33,7 +33,7 @@ using coug_interfaces::msg::AgentStatus;
 
 namespace {
 
-auto build_name(const std::string& agent, const std::string& sub) -> std::string {
+std::string build_name(const std::string& agent, const std::string& sub) {
   return "/" + agent + "/" + sub;
 }
 
@@ -86,9 +86,8 @@ void BaseStatusExtractorNode::registerAgent(const std::string& agent_name) {
   RCLCPP_INFO(get_logger(), "Registered agent '%s'.", agent_name.c_str());
 }
 
-auto BaseStatusExtractorNode::convertToOdom(const std::string& agent_name,
-                                            const AgentStatus::ConstSharedPtr& msg)
-    -> nav_msgs::msg::Odometry {
+nav_msgs::msg::Odometry BaseStatusExtractorNode::convertToOdom(
+    const std::string& agent_name, const AgentStatus::ConstSharedPtr& msg) {
   nav_msgs::msg::Odometry odom_msg;
   odom_msg.header = msg->header;
   odom_msg.header.frame_id = "map";
@@ -98,16 +97,16 @@ auto BaseStatusExtractorNode::convertToOdom(const std::string& agent_name,
   return odom_msg;
 }
 
-auto BaseStatusExtractorNode::convertToDepth(const AgentStatus::ConstSharedPtr& msg)
-    -> nav_msgs::msg::Odometry {
+nav_msgs::msg::Odometry BaseStatusExtractorNode::convertToDepth(
+    const AgentStatus::ConstSharedPtr& msg) {
   nav_msgs::msg::Odometry depth_msg;
   depth_msg.header = msg->header;
   depth_msg.pose.pose.position.z = msg->pressure_depth;
   return depth_msg;
 }
 
-auto BaseStatusExtractorNode::convertToImu(const AgentStatus::ConstSharedPtr& msg)
-    -> sensor_msgs::msg::Imu {
+sensor_msgs::msg::Imu BaseStatusExtractorNode::convertToImu(
+    const AgentStatus::ConstSharedPtr& msg) {
   sensor_msgs::msg::Imu imu_msg;
   imu_msg.header = msg->header;
   imu_msg.orientation = msg->imu_orientation;

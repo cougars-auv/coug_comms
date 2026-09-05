@@ -91,7 +91,7 @@ void AgentStatusBundlerNode::publishStatus() {
 
   if (last_depth_) {
     // Transform depth data into the base frame
-    std::string const depth_frame = last_depth_->child_frame_id;
+    const std::string depth_frame = last_depth_->child_frame_id;
 
     geometry_msgs::msg::TransformStamped depth_T_base_tf;
     try {
@@ -134,7 +134,7 @@ void AgentStatusBundlerNode::publishStatus() {
 
   if (last_imu_) {
     // Transform IMU data into the base frame
-    std::string const imu_frame = last_imu_->header.frame_id;
+    const std::string imu_frame = last_imu_->header.frame_id;
 
     geometry_msgs::msg::TransformStamped imu_T_base_tf;
     try {

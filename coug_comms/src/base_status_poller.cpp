@@ -54,7 +54,7 @@ constexpr double kDecimetersToMeters = 0.1;
 constexpr double kSeatracToRad = M_PI / 1800.0;
 constexpr int kMaxBeaconId = 15;
 
-auto build_name(const std::string& agent, const std::string& sub) -> std::string {
+std::string build_name(const std::string& agent, const std::string& sub) {
   return "/" + agent + "/" + sub;
 }
 
@@ -85,14 +85,14 @@ BaseStatusPollerNode::BaseStatusPollerNode(const rclcpp::NodeOptions& options)
 
   std::string prefix;
   if (params_.publish_diagnostics) {
-    std::string const ns = this->get_namespace();
-    std::string const clean_ns = (ns == "/") ? "" : ns;
+    const std::string ns = this->get_namespace();
+    const std::string clean_ns = (ns == "/") ? "" : ns;
     diagnostic_updater_.setHardwareID(clean_ns + "/base_status_poller_node");
     prefix = clean_ns.empty() ? "" : "[" + clean_ns + "] ";
   }
 
   for (const auto& agent_name : params_.agent_list) {
-    int64_t const raw_id = this->declare_parameter<int64_t>("beacon_ids." + agent_name, -1);
+    const int64_t raw_id = this->declare_parameter<int64_t>("beacon_ids." + agent_name, -1);
     if (raw_id < 0 || raw_id > kMaxBeaconId) {
       RCLCPP_ERROR(get_logger(), "Missing or invalid beacon_ids.%s (got %ld) — skipping '%s'.",
                    agent_name.c_str(), raw_id, agent_name.c_str());
@@ -297,12 +297,12 @@ void BaseStatusPollerNode::checkAgentPollStatus(diagnostic_updater::DiagnosticSt
                                                 uint8_t beacon_id) {
   const AgentEntry& agent = agents_.at(beacon_id);
 
-  double const direct_heartbeat_age = (agent.last_direct_heartbeat_sec > 0.0)
+  const double direct_heartbeat_age = (agent.last_direct_heartbeat_sec > 0.0)
                                           ? (now().seconds() - agent.last_direct_heartbeat_sec)
                                           : -1.0;
   stat.add("Time Since Direct Heartbeat (s)", direct_heartbeat_age);
 
-  double const time_since =
+  const double time_since =
       (agent.responses > 0) ? (now() - agent.last_response_time).seconds() : -1.0;
   if (agent.responses > 0) {
     stat.add("Last Transport", agent.last_transport);

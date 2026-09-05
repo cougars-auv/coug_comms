@@ -18,7 +18,7 @@
 
 #include "coug_comms/agent_receiver.hpp"
 
-auto main(int argc, char* argv[]) -> int {
+int main(int argc, char* argv[]) {
   rclcpp::init(argc, argv);
   auto node = std::make_shared<coug_comms::AgentReceiverNode>(rclcpp::NodeOptions());
   rclcpp::spin(node);

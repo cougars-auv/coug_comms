@@ -14,11 +14,12 @@
 
 #pragma once
 
+#include <cstdint>
 #include <string>
 
 namespace coug_comms::utils {
 
-enum class ServiceOutcome {
+enum class ServiceOutcome : std::uint8_t {
   kSucceeded = 0,
   kFailed,
   kQueued,

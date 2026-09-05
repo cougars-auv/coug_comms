@@ -58,13 +58,13 @@ AgentReceiverNode::AgentReceiverNode(const rclcpp::NodeOptions& options)
       create_client<std_srvs::srv::Trigger>(params_.emergency_surface_service);
 
   if (params_.publish_diagnostics) {
-    std::string const ns = this->get_namespace();
-    std::string const clean_ns = (ns == "/") ? "" : ns;
+    const std::string ns = this->get_namespace();
+    const std::string clean_ns = (ns == "/") ? "" : ns;
     diagnostic_updater_.setHardwareID(clean_ns + "/agent_receiver_node");
 
-    std::string const prefix = clean_ns.empty() ? "" : "[" + clean_ns + "] ";
+    const std::string prefix = clean_ns.empty() ? "" : "[" + clean_ns + "] ";
 
-    std::string const service_task = prefix + "Service Status";
+    const std::string service_task = prefix + "Service Status";
     diagnostic_updater_.add(service_task, this, &AgentReceiverNode::checkServiceStatus);
   }
 
