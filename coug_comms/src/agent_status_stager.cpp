@@ -33,7 +33,7 @@ using utils::BEACON_ALL;
 using utils::CID_DAT_QUEUE_SET;
 using utils::encodeStatus;
 
-AgentStatusStagerNode::AgentStatusStagerNode(rclcpp::NodeOptions const& options)
+AgentStatusStagerNode::AgentStatusStagerNode(const rclcpp::NodeOptions& options)
     : Node("agent_status_stager_node", options) {
   param_listener_ =
       std::make_shared<agent_status_stager_node::ParamListener>(get_node_parameters_interface());
@@ -41,7 +41,7 @@ AgentStatusStagerNode::AgentStatusStagerNode(rclcpp::NodeOptions const& options)
 
   status_sub_ = create_subscription<AgentStatus>(
       params_.status_topic, rclcpp::SystemDefaultsQoS(),
-      [this](AgentStatus::ConstSharedPtr const& msg) { statusCallback(msg); });
+      [this](const AgentStatus::ConstSharedPtr& msg) { statusCallback(msg); });
 
   modem_send_pub_ = create_publisher<seatrac_interfaces::msg::ModemSend>(
       params_.modem_send_topic, rclcpp::SystemDefaultsQoS());
@@ -49,7 +49,7 @@ AgentStatusStagerNode::AgentStatusStagerNode(rclcpp::NodeOptions const& options)
   RCLCPP_INFO(get_logger(), "Initialization complete.");
 }
 
-void AgentStatusStagerNode::statusCallback(AgentStatus::ConstSharedPtr const& msg) {
+void AgentStatusStagerNode::statusCallback(const AgentStatus::ConstSharedPtr& msg) {
   seatrac_interfaces::msg::ModemSend send_msg;
   send_msg.msg_id = CID_DAT_QUEUE_SET;
   send_msg.dest_id = BEACON_ALL;

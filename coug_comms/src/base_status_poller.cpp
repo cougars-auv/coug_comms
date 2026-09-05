@@ -54,13 +54,13 @@ constexpr double kDecimetersToMeters = 0.1;
 constexpr double kSeatracToRad = M_PI / 1800.0;
 constexpr int kMaxBeaconId = 15;
 
-auto build_name(std::string const& agent, std::string const& sub) -> std::string {
+auto build_name(const std::string& agent, const std::string& sub) -> std::string {
   return "/" + agent + "/" + sub;
 }
 
 }  // namespace
 
-BaseStatusPollerNode::BaseStatusPollerNode(rclcpp::NodeOptions const& options)
+BaseStatusPollerNode::BaseStatusPollerNode(const rclcpp::NodeOptions& options)
     : Node("base_status_poller_node", options), diagnostic_updater_(this) {
   param_listener_ =
       std::make_shared<base_status_poller_node::ParamListener>(get_node_parameters_interface());
@@ -70,13 +70,13 @@ BaseStatusPollerNode::BaseStatusPollerNode(rclcpp::NodeOptions const& options)
 
   modem_rec_sub_ = create_subscription<seatrac_interfaces::msg::ModemRec>(
       params_.modem_rec_topic, rclcpp::SystemDefaultsQoS(),
-      [this](seatrac_interfaces::msg::ModemRec::ConstSharedPtr const& msg) {
+      [this](const seatrac_interfaces::msg::ModemRec::ConstSharedPtr& msg) {
         modemRecCallback(msg);
       });
 
   modem_cmd_update_sub_ = create_subscription<seatrac_interfaces::msg::ModemCmdUpdate>(
       params_.modem_cmd_update_topic, rclcpp::SystemDefaultsQoS(),
-      [this](seatrac_interfaces::msg::ModemCmdUpdate::ConstSharedPtr const& msg) {
+      [this](const seatrac_interfaces::msg::ModemCmdUpdate::ConstSharedPtr& msg) {
         modemCmdUpdateCallback(msg);
       });
 
@@ -85,14 +85,14 @@ BaseStatusPollerNode::BaseStatusPollerNode(rclcpp::NodeOptions const& options)
 
   std::string prefix;
   if (params_.publish_diagnostics) {
-    std::string const ns = this->get_namespace();
-    std::string const clean_ns = (ns == "/") ? "" : ns;
+    const std::string ns = this->get_namespace();
+    const std::string clean_ns = (ns == "/") ? "" : ns;
     diagnostic_updater_.setHardwareID(clean_ns + "/base_status_poller_node");
     prefix = clean_ns.empty() ? "" : "[" + clean_ns + "] ";
   }
 
-  for (auto const& agent_name : params_.agent_list) {
-    int64_t const raw_id = this->declare_parameter<int64_t>("beacon_ids." + agent_name, -1);
+  for (const auto& agent_name : params_.agent_list) {
+    const int64_t raw_id = this->declare_parameter<int64_t>("beacon_ids." + agent_name, -1);
     if (raw_id < 0 || raw_id > kMaxBeaconId) {
       RCLCPP_ERROR(get_logger(), "Missing or invalid beacon_ids.%s (got %ld) — skipping '%s'.",
                    agent_name.c_str(), raw_id, agent_name.c_str());
@@ -117,7 +117,7 @@ void BaseStatusPollerNode::tickCallback() {
 }
 
 void BaseStatusPollerNode::modemRecCallback(
-    seatrac_interfaces::msg::ModemRec::ConstSharedPtr const& msg) {
+    const seatrac_interfaces::msg::ModemRec::ConstSharedPtr& msg) {
   if (!awaiting_response_ || !msg->local_flag || msg->src_id != pending_beacon_) {
     return;
   }
@@ -155,7 +155,7 @@ void BaseStatusPollerNode::modemRecCallback(
 }
 
 void BaseStatusPollerNode::modemCmdUpdateCallback(
-    seatrac_interfaces::msg::ModemCmdUpdate::ConstSharedPtr const& msg) {
+    const seatrac_interfaces::msg::ModemCmdUpdate::ConstSharedPtr& msg) {
   if (!awaiting_response_ || msg->target_id != pending_beacon_) {
     return;
   }
@@ -166,8 +166,8 @@ void BaseStatusPollerNode::modemCmdUpdateCallback(
   failPendingRequest("driver-level response timeout");
 }
 
-void BaseStatusPollerNode::registerAgent(std::string const& agent_name, uint8_t beacon_id,
-                                         std::string const& diag_prefix) {
+void BaseStatusPollerNode::registerAgent(const std::string& agent_name, uint8_t beacon_id,
+                                         const std::string& diag_prefix) {
   AgentEntry agent;
   agent.name = agent_name;
   agent.beacon_id = beacon_id;
@@ -179,7 +179,7 @@ void BaseStatusPollerNode::registerAgent(std::string const& agent_name, uint8_t 
   if (params_.enable_direct_comms || agent.is_lead) {
     agent.direct_status_sub = create_subscription<AgentStatus>(
         build_name(agent_name, params_.direct_status_topic), rclcpp::SystemDefaultsQoS(),
-        [this, beacon_id](AgentStatus::ConstSharedPtr const& msg) {
+        [this, beacon_id](const AgentStatus::ConstSharedPtr& msg) {
           auto it = agents_.find(beacon_id);
           if (it == agents_.end()) {
             return;
@@ -215,7 +215,7 @@ void BaseStatusPollerNode::pollNextIfReady() {
   AgentEntry& agent = agents_.at(beacon_order_[next_beacon_idx_]);
   next_beacon_idx_ = (next_beacon_idx_ + 1) % beacon_order_.size();
 
-  bool const direct_link_up =
+  const bool direct_link_up =
       agent.last_direct_heartbeat_sec > 0.0 &&
       now().seconds() - agent.last_direct_heartbeat_sec < params_.direct_timeout_sec;
   if (params_.enable_direct_comms && direct_link_up) {
@@ -248,7 +248,7 @@ void BaseStatusPollerNode::sendAcousticPoll(AgentEntry& agent) {
 }
 
 void BaseStatusPollerNode::publishStatus(AgentEntry& agent, AgentStatus status,
-                                         std::string const& transport) {
+                                         const std::string& transport) {
   status.header.stamp = now();
   agent.status_pub->publish(status);
 
@@ -263,22 +263,22 @@ void BaseStatusPollerNode::finishPendingRequest() {
   pollNextIfReady();
 }
 
-void BaseStatusPollerNode::failPendingRequest(std::string const& reason) {
+void BaseStatusPollerNode::failPendingRequest(const std::string& reason) {
   RCLCPP_WARN(get_logger(), "Beacon %d: %s.", pending_beacon_, reason.c_str());
   finishPendingRequest();
 }
 
-void BaseStatusPollerNode::publishPolledTransform(AgentEntry const& agent,
-                                                  seatrac_interfaces::msg::ModemRec const& msg) {
+void BaseStatusPollerNode::publishPolledTransform(const AgentEntry& agent,
+                                                  const seatrac_interfaces::msg::ModemRec& msg) {
   if (!msg.includes_usbl || !msg.includes_range || !msg.includes_position) {
     return;
   }
 
   // Convert FRD -> FLU
-  double const azimuth = -msg.usbl_azimuth * kSeatracToRad;
-  double const range = msg.range_dist * kDecimetersToMeters;
-  double const depth = (msg.position_depth - msg.depth_local) * kDecimetersToMeters;
-  double const horizontal_range = std::sqrt(std::max(range * range - depth * depth, 0.0));
+  const double azimuth = -msg.usbl_azimuth * kSeatracToRad;
+  const double range = msg.range_dist * kDecimetersToMeters;
+  const double depth = (msg.position_depth - msg.depth_local) * kDecimetersToMeters;
+  const double horizontal_range = std::sqrt(std::max(range * range - depth * depth, 0.0));
 
   geometry_msgs::msg::TransformStamped tf_msg;
   tf_msg.header.stamp = now();
@@ -295,14 +295,14 @@ void BaseStatusPollerNode::publishPolledTransform(AgentEntry const& agent,
 
 void BaseStatusPollerNode::checkAgentPollStatus(diagnostic_updater::DiagnosticStatusWrapper& stat,
                                                 uint8_t beacon_id) {
-  AgentEntry const& agent = agents_.at(beacon_id);
+  const AgentEntry& agent = agents_.at(beacon_id);
 
-  double const direct_heartbeat_age = (agent.last_direct_heartbeat_sec > 0.0)
+  const double direct_heartbeat_age = (agent.last_direct_heartbeat_sec > 0.0)
                                           ? (now().seconds() - agent.last_direct_heartbeat_sec)
                                           : -1.0;
   stat.add("Time Since Direct Heartbeat (s)", direct_heartbeat_age);
 
-  double const time_since =
+  const double time_since =
       (agent.responses > 0) ? (now() - agent.last_response_time).seconds() : -1.0;
   if (agent.responses > 0) {
     stat.add("Last Transport", agent.last_transport);

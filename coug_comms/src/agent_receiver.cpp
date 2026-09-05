@@ -37,7 +37,7 @@ using utils::MsgId;
 using utils::ServiceOutcome;
 using utils::toString;
 
-AgentReceiverNode::AgentReceiverNode(rclcpp::NodeOptions const& options)
+AgentReceiverNode::AgentReceiverNode(const rclcpp::NodeOptions& options)
     : Node("agent_receiver_node", options), diagnostic_updater_(this) {
   param_listener_ =
       std::make_shared<agent_receiver_node::ParamListener>(get_node_parameters_interface());
@@ -45,7 +45,7 @@ AgentReceiverNode::AgentReceiverNode(rclcpp::NodeOptions const& options)
 
   modem_rec_sub_ = create_subscription<seatrac_interfaces::msg::ModemRec>(
       params_.modem_rec_topic, rclcpp::SystemDefaultsQoS(),
-      [this](seatrac_interfaces::msg::ModemRec::ConstSharedPtr const& msg) {
+      [this](const seatrac_interfaces::msg::ModemRec::ConstSharedPtr& msg) {
         modemRecCallback(msg);
       });
 
@@ -58,13 +58,13 @@ AgentReceiverNode::AgentReceiverNode(rclcpp::NodeOptions const& options)
       create_client<std_srvs::srv::Trigger>(params_.emergency_surface_service);
 
   if (params_.publish_diagnostics) {
-    std::string const ns = this->get_namespace();
-    std::string const clean_ns = (ns == "/") ? "" : ns;
+    const std::string ns = this->get_namespace();
+    const std::string clean_ns = (ns == "/") ? "" : ns;
     diagnostic_updater_.setHardwareID(clean_ns + "/agent_receiver_node");
 
-    std::string const prefix = clean_ns.empty() ? "" : "[" + clean_ns + "] ";
+    const std::string prefix = clean_ns.empty() ? "" : "[" + clean_ns + "] ";
 
-    std::string const service_task = prefix + "Service Status";
+    const std::string service_task = prefix + "Service Status";
     diagnostic_updater_.add(service_task, this, &AgentReceiverNode::checkServiceStatus);
   }
 
@@ -72,12 +72,12 @@ AgentReceiverNode::AgentReceiverNode(rclcpp::NodeOptions const& options)
 }
 
 void AgentReceiverNode::modemRecCallback(
-    seatrac_interfaces::msg::ModemRec::ConstSharedPtr const& msg) {
+    const seatrac_interfaces::msg::ModemRec::ConstSharedPtr& msg) {
   if (!msg->local_flag || msg->packet_len < 1) {
     return;
   }
 
-  auto const msg_id = static_cast<MsgId>(msg->packet_data[0]);
+  const auto msg_id = static_cast<MsgId>(msg->packet_data[0]);
   rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr client;
   switch (msg_id) {
     case MsgId::kServiceStart:
@@ -106,9 +106,9 @@ void AgentReceiverNode::modemRecCallback(
   callService(client, msg_id);
 }
 
-void AgentReceiverNode::callService(rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr const& client,
+void AgentReceiverNode::callService(const rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr& client,
                                     MsgId msg) {
-  std::string const service = toString(msg);
+  const std::string service = toString(msg);
   if (!client->service_is_ready()) {
     RCLCPP_ERROR(get_logger(), "Service not available: %s", service.c_str());
     recordServiceResult(service, "ACOUSTIC", ServiceOutcome::kFailed);
@@ -121,7 +121,7 @@ void AgentReceiverNode::callService(rclcpp::Client<std_srvs::srv::Trigger>::Shar
         bool success = false;
         try {
           success = future.get()->success;
-        } catch (std::exception const& e) {
+        } catch (const std::exception& e) {
           RCLCPP_ERROR(get_logger(), "Service call failed: %s; %s", service.c_str(), e.what());
         }
         recordServiceResult(service, "ACOUSTIC",
@@ -134,8 +134,8 @@ void AgentReceiverNode::callService(rclcpp::Client<std_srvs::srv::Trigger>::Shar
       });
 }
 
-void AgentReceiverNode::recordServiceResult(std::string const& service,
-                                            std::string const& transport, ServiceOutcome outcome) {
+void AgentReceiverNode::recordServiceResult(const std::string& service,
+                                            const std::string& transport, ServiceOutcome outcome) {
   service_history_.push_back({service, transport, outcome});
   if (service_history_.size() > static_cast<size_t>(params_.service_history_size)) {
     service_history_.pop_front();
@@ -154,8 +154,8 @@ void AgentReceiverNode::checkServiceStatus(diagnostic_updater::DiagnosticStatusW
   }
   stat.add("Service History", history_str);
 
-  ServiceResult const& latest = service_history_.back();
-  std::string const summary = latest.service + " " + toString(latest.outcome) + ".";
+  const ServiceResult& latest = service_history_.back();
+  const std::string summary = latest.service + " " + toString(latest.outcome) + ".";
   if (latest.outcome == ServiceOutcome::kFailed) {
     stat.summary(diagnostic_msgs::msg::DiagnosticStatus::ERROR, summary);
   } else {

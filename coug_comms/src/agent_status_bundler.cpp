@@ -39,7 +39,7 @@ namespace coug_comms {
 
 using coug_interfaces::msg::AgentStatus;
 
-AgentStatusBundlerNode::AgentStatusBundlerNode(rclcpp::NodeOptions const& options)
+AgentStatusBundlerNode::AgentStatusBundlerNode(const rclcpp::NodeOptions& options)
     : Node("agent_status_bundler_node", options) {
   param_listener_ =
       std::make_shared<agent_status_bundler_node::ParamListener>(get_node_parameters_interface());
@@ -50,31 +50,31 @@ AgentStatusBundlerNode::AgentStatusBundlerNode(rclcpp::NodeOptions const& option
 
   odom_sub_ = create_subscription<nav_msgs::msg::Odometry>(
       params_.odom_topic, rclcpp::SystemDefaultsQoS(),
-      [this](nav_msgs::msg::Odometry::ConstSharedPtr const& msg) { odomCallback(msg); });
+      [this](const nav_msgs::msg::Odometry::ConstSharedPtr& msg) { odomCallback(msg); });
 
   depth_sub_ = create_subscription<nav_msgs::msg::Odometry>(
       params_.depth_topic, rclcpp::SystemDefaultsQoS(),
-      [this](nav_msgs::msg::Odometry::ConstSharedPtr const& msg) { depthCallback(msg); });
+      [this](const nav_msgs::msg::Odometry::ConstSharedPtr& msg) { depthCallback(msg); });
 
   imu_sub_ = create_subscription<sensor_msgs::msg::Imu>(
       params_.imu_topic, rclcpp::SystemDefaultsQoS(),
-      [this](sensor_msgs::msg::Imu::ConstSharedPtr const& msg) { imuCallback(msg); });
+      [this](const sensor_msgs::msg::Imu::ConstSharedPtr& msg) { imuCallback(msg); });
 
   status_pub_ = create_publisher<AgentStatus>(params_.status_topic, rclcpp::SystemDefaultsQoS());
 
   RCLCPP_INFO(get_logger(), "Initialization complete.");
 }
 
-void AgentStatusBundlerNode::odomCallback(nav_msgs::msg::Odometry::ConstSharedPtr const& msg) {
+void AgentStatusBundlerNode::odomCallback(const nav_msgs::msg::Odometry::ConstSharedPtr& msg) {
   last_odom_ = msg;
   publishStatus();
 }
 
-void AgentStatusBundlerNode::depthCallback(nav_msgs::msg::Odometry::ConstSharedPtr const& msg) {
+void AgentStatusBundlerNode::depthCallback(const nav_msgs::msg::Odometry::ConstSharedPtr& msg) {
   last_depth_ = msg;
 }
 
-void AgentStatusBundlerNode::imuCallback(sensor_msgs::msg::Imu::ConstSharedPtr const& msg) {
+void AgentStatusBundlerNode::imuCallback(const sensor_msgs::msg::Imu::ConstSharedPtr& msg) {
   last_imu_ = msg;
 }
 
@@ -91,7 +91,7 @@ void AgentStatusBundlerNode::publishStatus() {
 
   if (last_depth_) {
     // Transform depth data into the base frame
-    std::string const depth_frame = last_depth_->child_frame_id;
+    const std::string depth_frame = last_depth_->child_frame_id;
 
     geometry_msgs::msg::TransformStamped depth_T_base_tf;
     try {
@@ -123,7 +123,7 @@ void AgentStatusBundlerNode::publishStatus() {
       geometry_msgs::msg::Pose map_T_base;
       tf2::doTransform(depth_T_base, map_T_base, map_T_depth_tf);
       status.pressure_depth = map_T_base.position.z;
-    } catch (tf2::TransformException const& ex) {
+    } catch (const tf2::TransformException& ex) {
       RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 1000, "Could not transform %s to %s: %s",
                            depth_frame.c_str(), params_.base_frame.c_str(), ex.what());
       status.pressure_depth = last_depth_->pose.pose.position.z;
@@ -134,7 +134,7 @@ void AgentStatusBundlerNode::publishStatus() {
 
   if (last_imu_) {
     // Transform IMU data into the base frame
-    std::string const imu_frame = last_imu_->header.frame_id;
+    const std::string imu_frame = last_imu_->header.frame_id;
 
     geometry_msgs::msg::TransformStamped imu_T_base_tf;
     try {
@@ -149,7 +149,7 @@ void AgentStatusBundlerNode::publishStatus() {
       tf2::Quaternion map_R_base = map_R_imu * imu_R_base;
       map_R_base.normalize();
       status.imu_orientation = tf2::toMsg(map_R_base);
-    } catch (tf2::TransformException const& ex) {
+    } catch (const tf2::TransformException& ex) {
       RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 1000, "Could not transform %s to %s: %s",
                            imu_frame.c_str(), params_.base_frame.c_str(), ex.what());
       status.imu_orientation = last_imu_->orientation;

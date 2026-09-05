@@ -29,15 +29,15 @@ namespace coug_comms {
 
 class AgentStatusBundlerNode : public rclcpp::Node {
  public:
-  explicit AgentStatusBundlerNode(rclcpp::NodeOptions const& options);
+  explicit AgentStatusBundlerNode(const rclcpp::NodeOptions& options);
 
  private:
   // --- Callbacks ---
-  void odomCallback(nav_msgs::msg::Odometry::ConstSharedPtr const& msg);
+  void odomCallback(const nav_msgs::msg::Odometry::ConstSharedPtr& msg);
 
-  void depthCallback(nav_msgs::msg::Odometry::ConstSharedPtr const& msg);
+  void depthCallback(const nav_msgs::msg::Odometry::ConstSharedPtr& msg);
 
-  void imuCallback(sensor_msgs::msg::Imu::ConstSharedPtr const& msg);
+  void imuCallback(const sensor_msgs::msg::Imu::ConstSharedPtr& msg);
 
   // --- Helpers ---
   void publishStatus();

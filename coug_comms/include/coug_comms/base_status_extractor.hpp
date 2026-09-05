@@ -29,7 +29,7 @@ namespace coug_comms {
 
 class BaseStatusExtractorNode : public rclcpp::Node {
  public:
-  explicit BaseStatusExtractorNode(rclcpp::NodeOptions const& options);
+  explicit BaseStatusExtractorNode(const rclcpp::NodeOptions& options);
 
  private:
   struct AgentEntry {
@@ -40,20 +40,20 @@ class BaseStatusExtractorNode : public rclcpp::Node {
   };
 
   // --- Callbacks ---
-  void statusCallback(std::string const& agent_name,
-                      coug_interfaces::msg::AgentStatus::ConstSharedPtr const& msg);
+  void statusCallback(const std::string& agent_name,
+                      const coug_interfaces::msg::AgentStatus::ConstSharedPtr& msg);
 
   // --- Helpers ---
-  void registerAgent(std::string const& agent_name);
+  void registerAgent(const std::string& agent_name);
 
-  static auto convertToOdom(std::string const& agent_name,
-                            coug_interfaces::msg::AgentStatus::ConstSharedPtr const& msg)
+  static auto convertToOdom(const std::string& agent_name,
+                            const coug_interfaces::msg::AgentStatus::ConstSharedPtr& msg)
       -> nav_msgs::msg::Odometry;
 
-  static auto convertToDepth(coug_interfaces::msg::AgentStatus::ConstSharedPtr const& msg)
+  static auto convertToDepth(const coug_interfaces::msg::AgentStatus::ConstSharedPtr& msg)
       -> nav_msgs::msg::Odometry;
 
-  static auto convertToImu(coug_interfaces::msg::AgentStatus::ConstSharedPtr const& msg)
+  static auto convertToImu(const coug_interfaces::msg::AgentStatus::ConstSharedPtr& msg)
       -> sensor_msgs::msg::Imu;
 
   // --- Parameters ---
