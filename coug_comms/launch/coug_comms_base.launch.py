@@ -84,9 +84,7 @@ def launch_setup(context: LaunchContext, *args: Any, **kwargs: Any) -> list[Node
         agent_launch_params = load_launch_params(
             os.path.join(config_dir, f"{agent_ns}_params.yaml"), f"/{agent_ns}"
         )
-        beacon_id = agent_launch_params.get(
-            "beacon_id", fleet_defaults.get("beacon_id")
-        )
+        beacon_id = agent_launch_params.get("beacon_id", fleet_defaults.get("beacon_id"))
         if beacon_id is not None:
             beacon_ids[agent_ns] = beacon_id
 
@@ -153,8 +151,7 @@ def generate_launch_description() -> LaunchDescription:
                 "agent_list",
                 default_value="[auv0]",
                 description=(
-                    "YAML list of agent namespaces "
-                    "(e.g. '[coug1sim]' or '[coug1sim, coug2sim]')"
+                    "YAML list of agent namespaces (e.g. '[coug1sim]' or '[coug1sim, coug2sim]')"
                 ),
             ),
             DeclareLaunchArgument(
