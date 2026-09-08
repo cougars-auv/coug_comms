@@ -56,7 +56,11 @@ ament_auto_add_library(coug_comms_component SHARED NO_TARGET_LINK_LIBRARIES
 
 target_compile_features(coug_comms_component PUBLIC cxx_std_17)
 
-target_link_libraries(coug_comms_component ${COUG_COMMS_PARAM_LIBRARIES} Eigen3::Eigen)
+target_link_libraries(
+  coug_comms_component
+  ${COUG_COMMS_PARAM_LIBRARIES}
+  Eigen3::Eigen
+)
 
 rclcpp_components_register_nodes(coug_comms_component
   "coug_comms::AgentReceiverNode"
@@ -76,7 +80,10 @@ if(BUILD_TESTING)
   find_package(ament_cmake_gtest REQUIRED)
 
   ament_add_gtest(test_status_codec test/test_status_codec.cpp)
-  target_include_directories(test_status_codec PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")
+  target_include_directories(
+    test_status_codec
+    PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include"
+  )
   target_link_libraries(
     test_status_codec
     Eigen3::Eigen
