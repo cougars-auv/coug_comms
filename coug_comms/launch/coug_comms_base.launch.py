@@ -145,29 +145,22 @@ def generate_launch_description() -> LaunchDescription:
             DeclareLaunchArgument(
                 "use_sim_time",
                 default_value="false",
-                description="Use simulation/rosbag clock if true",
             ),
             DeclareLaunchArgument(
                 "agent_list",
                 default_value="[auv0]",
-                description=(
-                    "YAML list of agent namespaces (e.g. '[coug1sim]' or '[coug1sim, coug2sim]')"
-                ),
             ),
             DeclareLaunchArgument(
                 "lead_agent",
                 default_value="",
-                description="Namespace of the lead agent (optional)",
             ),
             DeclareLaunchArgument(
                 "enable_direct_comms",
                 default_value="true",
-                description="Enable direct ROS service communications",
             ),
             DeclareLaunchArgument(
                 "enable_acoustic_comms",
                 default_value="true",
-                description="Enable acoustic communications",
             ),
             OpaqueFunction(function=launch_setup),
         ]
