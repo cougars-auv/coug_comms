@@ -45,9 +45,16 @@ static_assert(kStatusPacketLen <= std::tuple_size<DatPayload>::value,
 
 inline constexpr double kCentimetersPerMeter = 100.0;
 
-// Bounds keeping variances inside the range float16 represents with useful precision
-inline constexpr double kMinVariance = 1.0e-4;
-inline constexpr double kMaxVariance = 6.0e4;
+// The float16 normal range, outside which variances lose precision or overflow
+inline constexpr double kMinEncodedVariance = 6.103515625e-05;  // 2^-14
+inline constexpr double kMaxEncodedVariance = 65504.0;
+
+inline constexpr double kPositionVarianceScale = 1.0;
+inline constexpr double kOrientationVarianceScale = 1.0e3;
+
+inline constexpr auto varianceScale(int diag_idx) -> double {
+  return diag_idx < 3 ? kPositionVarianceScale : kOrientationVarianceScale;
+}
 
 // Smallest-three packing: a 2-bit selector for the dropped component + three signed 10-bit counts
 inline constexpr int kQuatBits = 10;
@@ -73,21 +80,22 @@ inline auto decodeMeters(int16_t counts) -> double {
   return static_cast<double>(counts) / kCentimetersPerMeter;
 }
 
-inline auto sanitizeVariance(double variance) -> double {
-  if (!std::isfinite(variance) || variance <= 0.0) {
-    return kMaxVariance;
+inline auto sanitizeEncodedVariance(double encoded) -> double {
+  if (!std::isfinite(encoded) || encoded <= 0.0) {
+    return kMaxEncodedVariance;
   }
-  return std::clamp(variance, kMinVariance, kMaxVariance);
+  return std::clamp(encoded, kMinEncodedVariance, kMaxEncodedVariance);
 }
 
-inline auto encodeVariance(double variance) -> uint16_t {
-  const auto half = Eigen::half(static_cast<float>(sanitizeVariance(variance)));
-  return Eigen::numext::bit_cast<uint16_t>(half);
+inline auto encodeVariance(double variance, int diag_idx) -> uint16_t {
+  const double encoded = sanitizeEncodedVariance(variance * varianceScale(diag_idx));
+  return Eigen::numext::bit_cast<uint16_t>(Eigen::half(static_cast<float>(encoded)));
 }
 
-inline auto decodeVariance(uint16_t bits) -> double {
+inline auto decodeVariance(uint16_t bits, int diag_idx) -> double {
   const auto half = Eigen::numext::bit_cast<Eigen::half>(bits);
-  return sanitizeVariance(static_cast<double>(static_cast<float>(half)));
+  return sanitizeEncodedVariance(static_cast<double>(static_cast<float>(half))) /
+         varianceScale(diag_idx);
 }
 
 inline auto encodeQuaternion(const geometry_msgs::msg::Quaternion& q) -> uint32_t {
@@ -189,8 +197,9 @@ inline auto encodeStatus(const coug_interfaces::msg::AgentStatus& status, DatPay
   cursor.put(payload, encodeQuaternion(pose.orientation));
 
   for (int i = 0; i < kCovDim; ++i) {
-    cursor.put(payload, encodeVariance(
-                            status.odometry_covariance[static_cast<std::size_t>(i) * kCovStride]));
+    cursor.put(
+        payload,
+        encodeVariance(status.odometry_covariance[static_cast<std::size_t>(i) * kCovStride], i));
   }
 
   cursor.put(payload, encodeMeters(status.pressure_depth));
@@ -219,7 +228,7 @@ inline auto decodeStatus(const DatPayload& payload, uint8_t packet_len,
   status.odometry_covariance.fill(0.0);
   for (int i = 0; i < kCovDim; ++i) {
     status.odometry_covariance[static_cast<std::size_t>(i) * kCovStride] =
-        decodeVariance(cursor.get<uint16_t>(payload));
+        decodeVariance(cursor.get<uint16_t>(payload), i);
   }
 
   status.pressure_depth = decodeMeters(cursor.get<int16_t>(payload));

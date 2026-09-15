@@ -14,6 +14,7 @@
 
 #include <gtest/gtest.h>
 
+#include <array>
 #include <cmath>
 #include <cstddef>
 
@@ -27,8 +28,10 @@ using coug_comms::utils::DatPayload;
 using coug_comms::utils::decodeStatus;
 using coug_comms::utils::encodeStatus;
 using coug_comms::utils::kCovStride;
-using coug_comms::utils::kMaxVariance;
-using coug_comms::utils::kMinVariance;
+using coug_comms::utils::kMaxEncodedVariance;
+using coug_comms::utils::kMinEncodedVariance;
+using coug_comms::utils::kOrientationVarianceScale;
+using coug_comms::utils::kPositionVarianceScale;
 using coug_comms::utils::kStatusPacketLen;
 using coug_interfaces::msg::AgentStatus;
 
@@ -65,11 +68,11 @@ TEST(StatusCodecTest, RoundTrip) {
   in.pressure_depth = 4.05;
   in.local_odometry.orientation = makeQuat(-0.1, 0.2, -0.3, 0.9);
   in.imu_orientation = makeQuat(0.3, -0.4, 0.1, 0.8);
+  const std::array<double, 6> variances = {1.0e-9, 0.25, 1.0e9, 1.0e-12, 3.0e-6, 1.0e6};
   for (int i = 0; i < 6; ++i) {
-    in.odometry_covariance[static_cast<std::size_t>(i) * kCovStride] = 0.01 * (i + 1);
+    in.odometry_covariance[static_cast<std::size_t>(i) * kCovStride] =
+        variances[static_cast<std::size_t>(i)];
   }
-  in.odometry_covariance[0] = 1.0e-9;  // below kMinVariance, so the floor shows up
-  in.odometry_covariance[35] = 1.0e6;  // above kMaxVariance, so the ceiling shows up
 
   DatPayload buf{};
   ASSERT_EQ(encodeStatus(in, buf), kStatusPacketLen);
@@ -87,12 +90,17 @@ TEST(StatusCodecTest, RoundTrip) {
   expectQuatNear(out.local_odometry.orientation, in.local_odometry.orientation, "local_odometry");
   expectQuatNear(out.imu_orientation, in.imu_orientation, "imu_orientation");
 
-  EXPECT_NEAR(out.odometry_covariance[0], kMinVariance, kMinVariance * kVarianceTol);
-  EXPECT_NEAR(out.odometry_covariance[35], kMaxVariance, kMaxVariance * kVarianceTol);
-  for (int i = 1; i < 5; ++i) {
-    const double expected = 0.01 * (i + 1);
-    EXPECT_NEAR(out.odometry_covariance[static_cast<std::size_t>(i) * kCovStride], expected,
-                expected * kVarianceTol);
+  const std::array<double, 6> expected = {kMinEncodedVariance / kPositionVarianceScale,
+                                          0.25,
+                                          kMaxEncodedVariance / kPositionVarianceScale,
+                                          kMinEncodedVariance / kOrientationVarianceScale,
+                                          3.0e-6,
+                                          kMaxEncodedVariance / kOrientationVarianceScale};
+  for (int i = 0; i < 6; ++i) {
+    const double want = expected[static_cast<std::size_t>(i)];
+    EXPECT_NEAR(out.odometry_covariance[static_cast<std::size_t>(i) * kCovStride], want,
+                want * kVarianceTol)
+        << "at diagonal " << i;
   }
   for (const int off_diagonal : {1, 6, 11, 34}) {
     EXPECT_DOUBLE_EQ(out.odometry_covariance[off_diagonal], 0.0) << "at " << off_diagonal;
