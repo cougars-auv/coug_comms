@@ -49,6 +49,7 @@ inline constexpr double kCentimetersPerMeter = 100.0;
 inline constexpr double kMinEncodedVariance = 6.103515625e-05;  // 2^-14
 inline constexpr double kMaxEncodedVariance = 65504.0;
 
+// Position in m^2 already lands in that range; orientation in rad^2 is too small without scaling
 inline constexpr double kPositionVarianceScale = 1.0;
 inline constexpr double kOrientationVarianceScale = 1.0e3;
 
