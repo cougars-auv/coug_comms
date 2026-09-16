@@ -94,7 +94,7 @@ def launch_setup(context: LaunchContext, *args: Any, **kwargs: Any) -> list[Node
                     "lead_agent": lead_agent,
                     "enable_direct_comms": enable_direct_comms,
                     "enable_acoustic_comms": enable_acoustic_comms,
-                    **dispatcher_modem_topics,  # type: ignore[dict-item]
+                    **dispatcher_modem_topics,
                 },
             ],
         ),
@@ -112,7 +112,7 @@ def launch_setup(context: LaunchContext, *args: Any, **kwargs: Any) -> list[Node
                     "enable_direct_comms": enable_direct_comms,
                     "enable_acoustic_comms": enable_acoustic_comms,
                     "parameter_frame": poller_modem_frame,
-                    **poller_modem_topics,  # type: ignore[dict-item]
+                    **poller_modem_topics,
                 },
             ],
         ),
