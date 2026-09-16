@@ -23,6 +23,10 @@ from launch.substitutions import (
 from launch_ros.actions import Node
 
 
+def agent_frame(agent_ns: LaunchConfiguration, frame: str) -> PythonExpression:
+    return PythonExpression(["'", agent_ns, f"/{frame}' if '", agent_ns, f"' != '' else '{frame}'"])
+
+
 def generate_launch_description() -> LaunchDescription:
     use_sim_time = LaunchConfiguration("use_sim_time")
     agent_ns = LaunchConfiguration("agent_ns")
@@ -37,19 +41,11 @@ def generate_launch_description() -> LaunchDescription:
     agent_param_file = PathJoinSubstitution(
         [
             EnvironmentVariable("CONFIG_DIR"),
-            PythonExpression(["'", agent_ns, "' + '_params.yaml'"]),
+            [agent_ns, "_params.yaml"],
         ]
     )
 
-    base_link_frame = PythonExpression(
-        [
-            "'",
-            agent_ns,
-            "/base_link' if '",
-            agent_ns,
-            "' != '' else 'base_link'",
-        ]
-    )
+    base_link_frame = agent_frame(agent_ns, "base_link")
 
     return LaunchDescription(
         [

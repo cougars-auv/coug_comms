@@ -22,15 +22,24 @@ from launch.substitutions import (
     EnvironmentVariable,
     LaunchConfiguration,
     PathJoinSubstitution,
-    PythonExpression,
 )
 from launch_ros.actions import Node
+
+
+def load_launch_params(path: str, top_key: str) -> dict[str, Any]:
+    try:
+        with open(path) as config_file:
+            config = yaml.safe_load(config_file)
+        params = config[top_key]["coug_comms_base_launch"]["ros__parameters"]
+        return dict(params)
+    except (KeyError, TypeError, OSError):
+        return {}
 
 
 def launch_setup(context: LaunchContext, *args: Any, **kwargs: Any) -> list[Node]:
     use_sim_time = LaunchConfiguration("use_sim_time")
     lead_agent = LaunchConfiguration("lead_agent")
-    lead_agent_ns = lead_agent.perform(context)
+    lead_agent_str = lead_agent.perform(context)
     enable_direct_comms = LaunchConfiguration("enable_direct_comms")
     enable_acoustic_comms = LaunchConfiguration("enable_acoustic_comms")
     agent_list_str = LaunchConfiguration("agent_list").perform(context)
@@ -45,38 +54,21 @@ def launch_setup(context: LaunchContext, *args: Any, **kwargs: Any) -> list[Node
         ]
     )
 
-    poller_modem_frame = PythonExpression(
-        [
-            "'",
-            lead_agent,
-            "/modem_link' if '",
-            lead_agent,
-            "' != '' else 'base_station'",
-        ]
-    )
+    poller_modem_frame = f"{lead_agent_str}/modem_link" if lead_agent_str else "base_station"
 
     dispatcher_modem_topics = {}
     poller_modem_topics = {}
-    if lead_agent_ns:
-        dispatcher_modem_topics = {"modem_send_topic": f"/{lead_agent_ns}/modem_send"}
+    if lead_agent_str:
+        dispatcher_modem_topics = {"modem_send_topic": f"/{lead_agent_str}/modem_send"}
         poller_modem_topics = {
-            "modem_send_topic": f"/{lead_agent_ns}/modem_send",
-            "modem_rec_topic": f"/{lead_agent_ns}/modem_rec",
-            "modem_cmd_update_topic": f"/{lead_agent_ns}/modem_cmd_update",
+            "modem_send_topic": f"/{lead_agent_str}/modem_send",
+            "modem_rec_topic": f"/{lead_agent_str}/modem_rec",
+            "modem_cmd_update_topic": f"/{lead_agent_str}/modem_cmd_update",
         }
 
     config_dir = os.environ["CONFIG_DIR"]
 
-    def load_launch_params(path: str, top_key: str) -> dict[str, Any]:
-        try:
-            with open(path) as config_file:
-                config = yaml.safe_load(config_file)
-            params = config[top_key]["coug_comms_base_launch"]["ros__parameters"]
-            return dict(params)
-        except (KeyError, TypeError, OSError):
-            return {}
-
-    fleet_defaults = load_launch_params(
+    fleet_launch_params = load_launch_params(
         os.path.join(config_dir, "fleet", "coug_comms_params.yaml"), "/**"
     )
     beacon_ids = {}
@@ -84,7 +76,7 @@ def launch_setup(context: LaunchContext, *args: Any, **kwargs: Any) -> list[Node
         agent_launch_params = load_launch_params(
             os.path.join(config_dir, f"{agent_ns}_params.yaml"), f"/{agent_ns}"
         )
-        beacon_id = agent_launch_params.get("beacon_id", fleet_defaults.get("beacon_id"))
+        beacon_id = agent_launch_params.get("beacon_id", fleet_launch_params.get("beacon_id"))
         if beacon_id is not None:
             beacon_ids[agent_ns] = beacon_id
 
