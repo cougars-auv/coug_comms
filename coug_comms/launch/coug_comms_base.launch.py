@@ -39,12 +39,14 @@ def load_launch_params(path: str, top_key: str) -> dict[str, Any]:
 def launch_setup(context: LaunchContext, *args: Any, **kwargs: Any) -> list[Node]:
     use_sim_time = LaunchConfiguration("use_sim_time")
     lead_agent = LaunchConfiguration("lead_agent")
-    lead_agent_str = lead_agent.perform(context)
     enable_direct_comms = LaunchConfiguration("enable_direct_comms")
     enable_acoustic_comms = LaunchConfiguration("enable_acoustic_comms")
+    lead_agent_str = lead_agent.perform(context)
     agent_list_str = LaunchConfiguration("agent_list").perform(context)
 
     agent_list = yaml.safe_load(agent_list_str)
+
+    config_dir = os.environ["CONFIG_DIR"]
 
     fleet_param_file = PathJoinSubstitution(
         [
@@ -65,8 +67,6 @@ def launch_setup(context: LaunchContext, *args: Any, **kwargs: Any) -> list[Node
             "modem_rec_topic": f"/{lead_agent_str}/modem_rec",
             "modem_cmd_update_topic": f"/{lead_agent_str}/modem_cmd_update",
         }
-
-    config_dir = os.environ["CONFIG_DIR"]
 
     fleet_launch_params = load_launch_params(
         os.path.join(config_dir, "fleet", "coug_comms_params.yaml"), "/**"
