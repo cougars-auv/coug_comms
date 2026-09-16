@@ -55,6 +55,9 @@ def launch_setup(context: LaunchContext, *args: Any, **kwargs: Any) -> list[Node
             "coug_comms_params.yaml",
         ]
     )
+    scenario_param_file = (
+        LaunchConfiguration("scenario_param_file").perform(context) or fleet_param_file
+    )
 
     poller_modem_frame = f"{lead_agent_str}/modem_link" if lead_agent_str else "base_station"
 
@@ -87,6 +90,7 @@ def launch_setup(context: LaunchContext, *args: Any, **kwargs: Any) -> list[Node
             name="base_dispatcher_node",
             parameters=[
                 fleet_param_file,
+                scenario_param_file,
                 {
                     "agent_list": agent_list,
                     "beacon_ids": beacon_ids,
@@ -104,6 +108,7 @@ def launch_setup(context: LaunchContext, *args: Any, **kwargs: Any) -> list[Node
             name="base_status_poller_node",
             parameters=[
                 fleet_param_file,
+                scenario_param_file,
                 {
                     "agent_list": agent_list,
                     "beacon_ids": beacon_ids,
@@ -122,6 +127,7 @@ def launch_setup(context: LaunchContext, *args: Any, **kwargs: Any) -> list[Node
             name="base_status_extractor_node",
             parameters=[
                 fleet_param_file,
+                scenario_param_file,
                 {
                     "agent_list": agent_list,
                     "use_sim_time": use_sim_time,
@@ -141,6 +147,10 @@ def generate_launch_description() -> LaunchDescription:
             DeclareLaunchArgument(
                 "agent_list",
                 default_value="[auv0]",
+            ),
+            DeclareLaunchArgument(
+                "scenario_param_file",
+                default_value="",
             ),
             DeclareLaunchArgument(
                 "lead_agent",
