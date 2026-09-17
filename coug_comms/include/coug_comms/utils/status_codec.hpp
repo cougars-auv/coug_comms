@@ -53,7 +53,7 @@ inline constexpr double kMaxEncodedVariance = 65504.0;
 inline constexpr double kPositionVarianceScale = 1.0;
 inline constexpr double kOrientationVarianceScale = 1.0e3;
 
-inline constexpr auto varianceScale(int diag_idx) -> double {
+constexpr auto varianceScale(int diag_idx) -> double {
   return diag_idx < 3 ? kPositionVarianceScale : kOrientationVarianceScale;
 }
 
