@@ -49,11 +49,7 @@ def launch_setup(context: LaunchContext, *args: Any, **kwargs: Any) -> list[Node
     config_dir = os.environ["CONFIG_DIR"]
 
     fleet_param_file = PathJoinSubstitution(
-        [
-            EnvironmentVariable("CONFIG_DIR"),
-            "fleet",
-            "coug_comms_params.yaml",
-        ]
+        [EnvironmentVariable("CONFIG_DIR"), "fleet", "coug_comms_params.yaml"]
     )
     scenario_param_file = (
         LaunchConfiguration("scenario_param_file").perform(context) or fleet_param_file
@@ -92,12 +88,12 @@ def launch_setup(context: LaunchContext, *args: Any, **kwargs: Any) -> list[Node
                 fleet_param_file,
                 scenario_param_file,
                 {
-                    "agent_list": agent_list,
-                    "beacon_ids": beacon_ids,
                     "use_sim_time": use_sim_time,
+                    "agent_list": agent_list,
                     "lead_agent": lead_agent,
                     "enable_direct_comms": enable_direct_comms,
                     "enable_acoustic_comms": enable_acoustic_comms,
+                    "beacon_ids": beacon_ids,
                     **dispatcher_modem_topics,
                 },
             ],
@@ -110,12 +106,12 @@ def launch_setup(context: LaunchContext, *args: Any, **kwargs: Any) -> list[Node
                 fleet_param_file,
                 scenario_param_file,
                 {
-                    "agent_list": agent_list,
-                    "beacon_ids": beacon_ids,
                     "use_sim_time": use_sim_time,
+                    "agent_list": agent_list,
                     "lead_agent": lead_agent,
                     "enable_direct_comms": enable_direct_comms,
                     "enable_acoustic_comms": enable_acoustic_comms,
+                    "beacon_ids": beacon_ids,
                     "parameter_frame": poller_modem_frame,
                     **poller_modem_topics,
                 },
@@ -129,8 +125,8 @@ def launch_setup(context: LaunchContext, *args: Any, **kwargs: Any) -> list[Node
                 fleet_param_file,
                 scenario_param_file,
                 {
-                    "agent_list": agent_list,
                     "use_sim_time": use_sim_time,
+                    "agent_list": agent_list,
                 },
             ],
         ),
