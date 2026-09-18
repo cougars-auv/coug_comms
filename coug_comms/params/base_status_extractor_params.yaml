@@ -22,3 +22,13 @@ base_status_extractor_node:
     default_value: "base/seatrac/imu/data"
     validation:
       not_empty<>: []
+  map_frame:
+    type: string
+    default_value: "map"
+    validation:
+      not_empty<>: []
+  multiagent_base_frame:
+    type: string
+    default_value: "base_link"
+    validation:
+      not_empty<>: []

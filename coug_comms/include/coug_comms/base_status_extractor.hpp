@@ -46,14 +46,16 @@ class BaseStatusExtractorNode : public rclcpp::Node {
   // --- Helpers ---
   void registerAgent(const std::string& agent_name);
 
-  static auto convertToOdom(const std::string& agent_name,
-                            const coug_interfaces::msg::AgentStatus::ConstSharedPtr& msg)
+  auto convertToOdom(const std::string& agent_name,
+                     const coug_interfaces::msg::AgentStatus::ConstSharedPtr& msg) const
       -> nav_msgs::msg::Odometry;
 
-  static auto convertToDepth(const coug_interfaces::msg::AgentStatus::ConstSharedPtr& msg)
+  auto convertToDepth(const std::string& agent_name,
+                      const coug_interfaces::msg::AgentStatus::ConstSharedPtr& msg) const
       -> nav_msgs::msg::Odometry;
 
-  static auto convertToImu(const coug_interfaces::msg::AgentStatus::ConstSharedPtr& msg)
+  auto convertToImu(const std::string& agent_name,
+                    const coug_interfaces::msg::AgentStatus::ConstSharedPtr& msg) const
       -> sensor_msgs::msg::Imu;
 
   // --- Parameters ---

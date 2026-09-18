@@ -127,6 +127,8 @@ def launch_setup(context: LaunchContext, *args: Any, **kwargs: Any) -> list[Node
                 {
                     "use_sim_time": use_sim_time,
                     "agent_list": agent_list,
+                    "map_frame": "map",
+                    "multiagent_base_frame": "base_link",
                 },
             ],
         ),

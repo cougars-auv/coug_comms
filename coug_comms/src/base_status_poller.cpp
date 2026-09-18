@@ -288,7 +288,6 @@ void BaseStatusPollerNode::publishPolledTransform(const AgentEntry& agent,
   tf_msg.transform.translation.x = horizontal_range * std::cos(azimuth);
   tf_msg.transform.translation.y = horizontal_range * std::sin(azimuth);
   tf_msg.transform.translation.z = -depth;
-  tf_msg.transform.rotation.w = 1.0;
 
   tf_broadcaster_->sendTransform(tf_msg);
 }

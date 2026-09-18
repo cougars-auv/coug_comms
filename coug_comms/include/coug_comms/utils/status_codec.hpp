@@ -35,10 +35,13 @@ using DatPayload = std::array<uint8_t, 30>;
 inline constexpr int kCovDim = 6;
 inline constexpr int kCovStride = kCovDim + 1;
 
+inline constexpr uint8_t kStatusFlagDepth = 1U << 0U;
+inline constexpr uint8_t kStatusFlagAhrs = 1U << 1U;
+
 // Byte length of an encoded status packet
-inline constexpr uint8_t kStatusPacketLen =
-    static_cast<uint8_t>(sizeof(uint8_t) + 3 * sizeof(int16_t) + sizeof(uint32_t) +
-                         kCovDim * sizeof(uint16_t) + sizeof(int16_t) + sizeof(uint32_t));
+inline constexpr uint8_t kStatusPacketLen = static_cast<uint8_t>(
+    sizeof(uint8_t) + sizeof(uint8_t) + 3 * sizeof(int16_t) + sizeof(uint32_t) +
+    kCovDim * sizeof(uint16_t) + sizeof(int16_t) + sizeof(uint32_t));
 
 static_assert(kStatusPacketLen <= std::tuple_size<DatPayload>::value,
               "An encoded status must fit in one acoustic DAT payload");
@@ -191,6 +194,15 @@ inline auto encodeStatus(const coug_interfaces::msg::AgentStatus& status, DatPay
   PayloadCursor cursor;
   cursor.put<uint8_t>(payload, static_cast<uint8_t>(MsgId::kStatusResponse));
 
+  uint8_t flags = 0;
+  if (status.includes_depth) {
+    flags |= kStatusFlagDepth;
+  }
+  if (status.includes_ahrs) {
+    flags |= kStatusFlagAhrs;
+  }
+  cursor.put<uint8_t>(payload, flags);
+
   const auto& pose = status.local_odometry;
   cursor.put(payload, encodeMeters(pose.position.x));
   cursor.put(payload, encodeMeters(pose.position.y));
@@ -204,7 +216,7 @@ inline auto encodeStatus(const coug_interfaces::msg::AgentStatus& status, DatPay
   }
 
   cursor.put(payload, encodeMeters(status.pressure_depth));
-  cursor.put(payload, encodeQuaternion(status.imu_orientation));
+  cursor.put(payload, encodeQuaternion(status.ahrs_orientation));
 
   assert(cursor.offset() == kStatusPacketLen);
   return cursor.offset();
@@ -220,6 +232,10 @@ inline auto decodeStatus(const DatPayload& payload, uint8_t packet_len,
     return false;
   }
 
+  const auto flags = cursor.get<uint8_t>(payload);
+  status.includes_depth = (flags & kStatusFlagDepth) != 0;
+  status.includes_ahrs = (flags & kStatusFlagAhrs) != 0;
+
   auto& pose = status.local_odometry;
   pose.position.x = decodeMeters(cursor.get<int16_t>(payload));
   pose.position.y = decodeMeters(cursor.get<int16_t>(payload));
@@ -233,7 +249,7 @@ inline auto decodeStatus(const DatPayload& payload, uint8_t packet_len,
   }
 
   status.pressure_depth = decodeMeters(cursor.get<int16_t>(payload));
-  status.imu_orientation = decodeQuaternion(cursor.get<uint32_t>(payload));
+  status.ahrs_orientation = decodeQuaternion(cursor.get<uint32_t>(payload));
   return true;
 }
 

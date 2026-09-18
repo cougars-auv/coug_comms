@@ -14,6 +14,7 @@
 
 #include "coug_comms/agent_status_bundler.hpp"
 
+#include <cmath>
 #include <memory>
 #include <rclcpp/logging.hpp>
 #include <rclcpp/node.hpp>
@@ -85,11 +86,14 @@ void AgentStatusBundlerNode::publishStatus() {
 
   AgentStatus status;
   status.header.stamp = now();
+  status.header.frame_id = params_.map_frame;
 
   status.local_odometry = last_odom_->pose.pose;
   status.odometry_covariance = last_odom_->pose.covariance;
 
   if (last_depth_) {
+    status.includes_depth = true;
+
     // Transform depth data into the base frame
     const std::string depth_frame = last_depth_->child_frame_id;
 
@@ -128,11 +132,11 @@ void AgentStatusBundlerNode::publishStatus() {
                            depth_frame.c_str(), params_.base_frame.c_str(), ex.what());
       status.pressure_depth = last_depth_->pose.pose.position.z;
     }
-  } else {
-    status.pressure_depth = 0.0;
   }
 
   if (last_imu_) {
+    status.includes_ahrs = true;
+
     // Transform IMU data into the base frame
     const std::string imu_frame = last_imu_->header.frame_id;
 
@@ -148,14 +152,12 @@ void AgentStatusBundlerNode::publishStatus() {
 
       tf2::Quaternion map_R_base = map_R_imu * imu_R_base;
       map_R_base.normalize();
-      status.imu_orientation = tf2::toMsg(map_R_base);
+      status.ahrs_orientation = tf2::toMsg(map_R_base);
     } catch (const tf2::TransformException& ex) {
       RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 1000, "Could not transform %s to %s: %s",
                            imu_frame.c_str(), params_.base_frame.c_str(), ex.what());
-      status.imu_orientation = last_imu_->orientation;
+      status.ahrs_orientation = last_imu_->orientation;
     }
-  } else {
-    status.imu_orientation.w = 1.0;
   }
 
   status_pub_->publish(status);

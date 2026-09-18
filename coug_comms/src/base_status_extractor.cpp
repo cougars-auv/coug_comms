@@ -37,6 +37,12 @@ auto build_name(const std::string& agent, const std::string& sub) -> std::string
   return "/" + agent + "/" + sub;
 }
 
+auto build_frame(const std::string& agent, const std::string& frame) -> std::string {
+  return agent + "/" + frame;
+}
+
+constexpr double kUnknownCovariance = -1.0;
+
 }  // namespace
 
 BaseStatusExtractorNode::BaseStatusExtractorNode(const rclcpp::NodeOptions& options)
@@ -61,8 +67,13 @@ void BaseStatusExtractorNode::statusCallback(const std::string& agent_name,
 
   auto& agent = it->second;
   agent.odom_pub->publish(convertToOdom(agent_name, msg));
-  agent.depth_pub->publish(convertToDepth(msg));
-  agent.imu_pub->publish(convertToImu(msg));
+
+  if (msg->includes_depth) {
+    agent.depth_pub->publish(convertToDepth(agent_name, msg));
+  }
+  if (msg->includes_ahrs) {
+    agent.imu_pub->publish(convertToImu(agent_name, msg));
+  }
 }
 
 void BaseStatusExtractorNode::registerAgent(const std::string& agent_name) {
@@ -87,30 +98,47 @@ void BaseStatusExtractorNode::registerAgent(const std::string& agent_name) {
 }
 
 auto BaseStatusExtractorNode::convertToOdom(const std::string& agent_name,
-                                            const AgentStatus::ConstSharedPtr& msg)
+                                            const AgentStatus::ConstSharedPtr& msg) const
     -> nav_msgs::msg::Odometry {
   nav_msgs::msg::Odometry odom_msg;
   odom_msg.header = msg->header;
-  odom_msg.header.frame_id = "map";
-  odom_msg.child_frame_id = agent_name + "/base_link";
+  odom_msg.header.frame_id = params_.map_frame;
+  odom_msg.child_frame_id = build_frame(agent_name, params_.multiagent_base_frame);
   odom_msg.pose.pose = msg->local_odometry;
   odom_msg.pose.covariance = msg->odometry_covariance;
+
+  odom_msg.twist.covariance[0] = kUnknownCovariance;
+
   return odom_msg;
 }
 
-auto BaseStatusExtractorNode::convertToDepth(const AgentStatus::ConstSharedPtr& msg)
+auto BaseStatusExtractorNode::convertToDepth(const std::string& agent_name,
+                                             const AgentStatus::ConstSharedPtr& msg) const
     -> nav_msgs::msg::Odometry {
   nav_msgs::msg::Odometry depth_msg;
   depth_msg.header = msg->header;
+  depth_msg.header.frame_id = params_.map_frame;
+  depth_msg.child_frame_id = build_frame(agent_name, params_.multiagent_base_frame);
   depth_msg.pose.pose.position.z = msg->pressure_depth;
+
+  depth_msg.pose.covariance[0] = kUnknownCovariance;
+  depth_msg.twist.covariance[0] = kUnknownCovariance;
+
   return depth_msg;
 }
 
-auto BaseStatusExtractorNode::convertToImu(const AgentStatus::ConstSharedPtr& msg)
+auto BaseStatusExtractorNode::convertToImu(const std::string& agent_name,
+                                           const AgentStatus::ConstSharedPtr& msg) const
     -> sensor_msgs::msg::Imu {
   sensor_msgs::msg::Imu imu_msg;
   imu_msg.header = msg->header;
-  imu_msg.orientation = msg->imu_orientation;
+  imu_msg.header.frame_id = build_frame(agent_name, params_.multiagent_base_frame);
+  imu_msg.orientation = msg->ahrs_orientation;
+
+  imu_msg.orientation_covariance[0] = kUnknownCovariance;
+  imu_msg.linear_acceleration_covariance[0] = kUnknownCovariance;
+  imu_msg.angular_velocity_covariance[0] = kUnknownCovariance;
+
   return imu_msg;
 }
 

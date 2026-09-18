@@ -65,9 +65,11 @@ TEST(StatusCodecTest, RoundTrip) {
   in.local_odometry.position.x = 12.34;
   in.local_odometry.position.y = -56.78;
   in.local_odometry.position.z = 3.20;
+  in.includes_depth = true;
   in.pressure_depth = 4.05;
+  in.includes_ahrs = true;
   in.local_odometry.orientation = makeQuat(-0.1, 0.2, -0.3, 0.9);
-  in.imu_orientation = makeQuat(0.3, -0.4, 0.1, 0.8);
+  in.ahrs_orientation = makeQuat(0.3, -0.4, 0.1, 0.8);
   const std::array<double, 6> variances = {1.0e-9, 0.25, 1.0e9, 1.0e-12, 3.0e-6, 1.0e6};
   for (int i = 0; i < 6; ++i) {
     in.odometry_covariance[static_cast<std::size_t>(i) * kCovStride] =
@@ -88,7 +90,7 @@ TEST(StatusCodecTest, RoundTrip) {
   EXPECT_NEAR(out.pressure_depth, 4.05, kMetersTol);
 
   expectQuatNear(out.local_odometry.orientation, in.local_odometry.orientation, "local_odometry");
-  expectQuatNear(out.imu_orientation, in.imu_orientation, "imu_orientation");
+  expectQuatNear(out.ahrs_orientation, in.ahrs_orientation, "ahrs_orientation");
 
   const std::array<double, 6> expected = {kMinEncodedVariance / kPositionVarianceScale,
                                           0.25,
@@ -105,6 +107,9 @@ TEST(StatusCodecTest, RoundTrip) {
   for (const int off_diagonal : {1, 6, 11, 34}) {
     EXPECT_DOUBLE_EQ(out.odometry_covariance[off_diagonal], 0.0) << "at " << off_diagonal;
   }
+
+  EXPECT_TRUE(out.includes_depth);
+  EXPECT_TRUE(out.includes_ahrs);
 
   EXPECT_EQ(out.header.frame_id, "coug1/base_link");  // the header is the caller's to fill in
 }

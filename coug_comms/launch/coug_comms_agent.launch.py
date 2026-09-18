@@ -89,6 +89,7 @@ def generate_launch_description() -> LaunchDescription:
                     scenario_param_file,
                     {
                         "use_sim_time": use_sim_time,
+                        "map_frame": "map",
                         "base_frame": base_link_frame,
                     },
                 ],
