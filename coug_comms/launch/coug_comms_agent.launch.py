@@ -12,8 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument
+from typing import Any
+
+from launch import LaunchContext, LaunchDescription
+from launch.action import Action
+from launch.actions import DeclareLaunchArgument, OpaqueFunction
 from launch.substitution import Substitution
 from launch.substitutions import (
     EnvironmentVariable,
@@ -28,7 +31,7 @@ def agent_frame(agent_ns: str | Substitution, frame: str) -> PythonExpression:
     return PythonExpression(["'", agent_ns, f"/{frame}' if '", agent_ns, f"' != '' else '{frame}'"])
 
 
-def generate_launch_description() -> LaunchDescription:
+def launch_setup(context: LaunchContext, *args: Any, **kwargs: Any) -> list[Action]:
     use_sim_time = LaunchConfiguration("use_sim_time")
     agent_ns = LaunchConfiguration("agent_ns")
 
@@ -38,12 +41,54 @@ def generate_launch_description() -> LaunchDescription:
     agent_param_file = PathJoinSubstitution(
         [EnvironmentVariable("CONFIG_DIR"), [agent_ns, "_params.yaml"]]
     )
-    scenario_param_file = PythonExpression(
-        ["'", LaunchConfiguration("scenario_param_file"), "' or '", agent_param_file, "'"]
+    scenario_param_file = (
+        LaunchConfiguration("scenario_param_file").perform(context) or agent_param_file
     )
 
     base_link_frame = agent_frame(agent_ns, "base_link")
 
+    return [
+        Node(
+            package="coug_comms",
+            executable="agent_receiver",
+            name="agent_receiver_node",
+            parameters=[
+                fleet_param_file,
+                agent_param_file,
+                scenario_param_file,
+                {"use_sim_time": use_sim_time},
+            ],
+        ),
+        Node(
+            package="coug_comms",
+            executable="agent_status_stager",
+            name="agent_status_stager_node",
+            parameters=[
+                fleet_param_file,
+                agent_param_file,
+                scenario_param_file,
+                {"use_sim_time": use_sim_time},
+            ],
+        ),
+        Node(
+            package="coug_comms",
+            executable="agent_status_bundler",
+            name="agent_status_bundler_node",
+            parameters=[
+                fleet_param_file,
+                agent_param_file,
+                scenario_param_file,
+                {
+                    "use_sim_time": use_sim_time,
+                    "map_frame": "map",
+                    "base_frame": base_link_frame,
+                },
+            ],
+        ),
+    ]
+
+
+def generate_launch_description() -> LaunchDescription:
     return LaunchDescription(
         [
             DeclareLaunchArgument(
@@ -58,42 +103,6 @@ def generate_launch_description() -> LaunchDescription:
                 "scenario_param_file",
                 default_value="",
             ),
-            Node(
-                package="coug_comms",
-                executable="agent_receiver",
-                name="agent_receiver_node",
-                parameters=[
-                    fleet_param_file,
-                    agent_param_file,
-                    scenario_param_file,
-                    {"use_sim_time": use_sim_time},
-                ],
-            ),
-            Node(
-                package="coug_comms",
-                executable="agent_status_stager",
-                name="agent_status_stager_node",
-                parameters=[
-                    fleet_param_file,
-                    agent_param_file,
-                    scenario_param_file,
-                    {"use_sim_time": use_sim_time},
-                ],
-            ),
-            Node(
-                package="coug_comms",
-                executable="agent_status_bundler",
-                name="agent_status_bundler_node",
-                parameters=[
-                    fleet_param_file,
-                    agent_param_file,
-                    scenario_param_file,
-                    {
-                        "use_sim_time": use_sim_time,
-                        "map_frame": "map",
-                        "base_frame": base_link_frame,
-                    },
-                ],
-            ),
+            OpaqueFunction(function=launch_setup),
         ]
     )
