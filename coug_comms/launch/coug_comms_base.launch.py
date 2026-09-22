@@ -17,6 +17,7 @@ from typing import Any
 
 import yaml
 from launch import LaunchContext, LaunchDescription
+from launch.action import Action
 from launch.actions import DeclareLaunchArgument, OpaqueFunction
 from launch.substitutions import (
     EnvironmentVariable,
@@ -36,7 +37,7 @@ def load_launch_params(path: str, top_key: str) -> dict[str, Any]:
         return {}
 
 
-def launch_setup(context: LaunchContext, *args: Any, **kwargs: Any) -> list[Node]:
+def launch_setup(context: LaunchContext, *args: Any, **kwargs: Any) -> list[Action]:
     use_sim_time = LaunchConfiguration("use_sim_time")
     lead_agent = LaunchConfiguration("lead_agent")
     enable_direct_comms = LaunchConfiguration("enable_direct_comms")
