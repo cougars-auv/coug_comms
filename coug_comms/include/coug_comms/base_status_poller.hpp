@@ -46,7 +46,7 @@ class BaseStatusPollerNode : public rclcpp::Node {
     size_t responses = 0;
     std::string last_transport;
     rclcpp::Time last_response_time;
-    double last_direct_heartbeat_sec = 0.0;
+    double last_direct_heartbeat_time = 0.0;
   };
 
   // --- Callbacks ---

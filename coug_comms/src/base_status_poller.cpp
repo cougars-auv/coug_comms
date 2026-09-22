@@ -184,7 +184,7 @@ void BaseStatusPollerNode::registerAgent(const std::string& agent_name, uint8_t 
           if (it == agents_.end()) {
             return;
           }
-          it->second.last_direct_heartbeat_sec = now().seconds();
+          it->second.last_direct_heartbeat_time = now().seconds();
           publishStatus(it->second, *msg, "DIRECT");
         });
   }
@@ -216,8 +216,8 @@ void BaseStatusPollerNode::pollNextIfReady() {
   next_beacon_idx_ = (next_beacon_idx_ + 1) % beacon_order_.size();
 
   const bool direct_link_up =
-      agent.last_direct_heartbeat_sec > 0.0 &&
-      now().seconds() - agent.last_direct_heartbeat_sec < params_.direct_timeout_sec;
+      agent.last_direct_heartbeat_time > 0.0 &&
+      now().seconds() - agent.last_direct_heartbeat_time < params_.direct_timeout_sec;
   if (params_.enable_direct_comms && direct_link_up) {
     scheduleNextPoll();
     return;
@@ -296,8 +296,8 @@ void BaseStatusPollerNode::checkAgentPollStatus(diagnostic_updater::DiagnosticSt
                                                 uint8_t beacon_id) {
   const AgentEntry& agent = agents_.at(beacon_id);
 
-  const double direct_heartbeat_age = (agent.last_direct_heartbeat_sec > 0.0)
-                                          ? (now().seconds() - agent.last_direct_heartbeat_sec)
+  const double direct_heartbeat_age = (agent.last_direct_heartbeat_time > 0.0)
+                                          ? (now().seconds() - agent.last_direct_heartbeat_time)
                                           : -1.0;
   stat.add("Time Since Direct Heartbeat (s)", direct_heartbeat_age);
 

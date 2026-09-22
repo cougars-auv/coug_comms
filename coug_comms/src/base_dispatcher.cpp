@@ -125,7 +125,7 @@ void BaseDispatcherNode::registerAgent(const std::string& agent_name, uint8_t be
         [this, beacon_id](const AgentStatus::ConstSharedPtr&) {
           auto it = agents_.find(beacon_id);
           if (it != agents_.end()) {
-            it->second.last_direct_heartbeat_sec = now().seconds();
+            it->second.last_direct_heartbeat_time = now().seconds();
           }
         });
   }
@@ -173,8 +173,8 @@ auto BaseDispatcherNode::directServiceDispatch(
     const rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr& service_handle,
     const std::shared_ptr<rmw_request_id_t>& header) -> bool {
   const bool direct_link_up =
-      agent.last_direct_heartbeat_sec > 0.0 &&
-      now().seconds() - agent.last_direct_heartbeat_sec < params_.direct_timeout_sec;
+      agent.last_direct_heartbeat_time > 0.0 &&
+      now().seconds() - agent.last_direct_heartbeat_time < params_.direct_timeout_sec;
   auto client_it = agent.direct_clients.find(static_cast<uint8_t>(msg));
   if (!direct_link_up || client_it == agent.direct_clients.end() ||
       !client_it->second->service_is_ready()) {
@@ -243,8 +243,8 @@ void BaseDispatcherNode::checkAgentServiceStatus(diagnostic_updater::DiagnosticS
                                                  uint8_t beacon_id) {
   const AgentEntry& agent = agents_.at(beacon_id);
 
-  const double direct_heartbeat_age = (agent.last_direct_heartbeat_sec > 0.0)
-                                          ? (now().seconds() - agent.last_direct_heartbeat_sec)
+  const double direct_heartbeat_age = (agent.last_direct_heartbeat_time > 0.0)
+                                          ? (now().seconds() - agent.last_direct_heartbeat_time)
                                           : -1.0;
   stat.add("Time Since Direct Heartbeat (s)", direct_heartbeat_age);
 

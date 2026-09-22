@@ -55,7 +55,7 @@ class BaseDispatcherNode : public rclcpp::Node {
     std::unordered_map<uint8_t, rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr> direct_clients;
     std::deque<ServiceResult> service_history;
     rclcpp::Subscription<coug_interfaces::msg::AgentStatus>::SharedPtr direct_status_sub;
-    double last_direct_heartbeat_sec = 0.0;
+    double last_direct_heartbeat_time = 0.0;
   };
 
   // --- Helpers ---
