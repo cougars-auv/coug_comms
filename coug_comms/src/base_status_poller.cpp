@@ -94,7 +94,7 @@ BaseStatusPollerNode::BaseStatusPollerNode(const rclcpp::NodeOptions& options)
   for (const auto& agent_name : params_.agent_list) {
     const int64_t raw_id = this->declare_parameter<int64_t>("beacon_ids." + agent_name, -1);
     if (raw_id < 0 || raw_id > kMaxBeaconId) {
-      RCLCPP_ERROR(get_logger(), "Missing or invalid beacon_ids.%s (got %ld) — skipping '%s'.",
+      RCLCPP_ERROR(get_logger(), "Missing or invalid beacon_ids.%s (got %ld); skipping '%s'.",
                    agent_name.c_str(), raw_id, agent_name.c_str());
       continue;
     }
