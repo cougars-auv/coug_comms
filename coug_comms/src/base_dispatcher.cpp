@@ -164,7 +164,7 @@ void BaseDispatcherNode::handleServiceRequest(
 
   std_srvs::srv::Trigger::Response res;
   res.success = false;
-  res.message = service + " failed: no comms link available.";
+  res.message = service + " failed: no comms link to beacon " + std::to_string(beacon_id) + ".";
   service_handle->send_response(*header, res);
   RCLCPP_ERROR(get_logger(), "%s", res.message.c_str());
   recordServiceResult(beacon_id, service, "NONE", ServiceOutcome::kFailed);
@@ -198,7 +198,8 @@ auto BaseDispatcherNode::directServiceDispatch(
         }
         std_srvs::srv::Trigger::Response res;
         res.success = success;
-        res.message = service + (success ? " succeeded." : " failed.");
+        res.message = service + (success ? " succeeded" : " failed") +
+                      " via direct link to beacon " + std::to_string(beacon_id) + ".";
         service_handle->send_response(*header, res);
         if (success) {
           RCLCPP_INFO(get_logger(), "%s", res.message.c_str());
@@ -226,7 +227,8 @@ void BaseDispatcherNode::acousticServiceDispatch(
   const std::string service = toString(msg);
   std_srvs::srv::Trigger::Response res;
   res.success = true;
-  res.message = service + " queued for acoustic delivery.";
+  res.message =
+      service + " queued for acoustic delivery to beacon " + std::to_string(agent.beacon_id) + ".";
   service_handle->send_response(*header, res);
   RCLCPP_INFO(get_logger(), "%s", res.message.c_str());
   recordServiceResult(agent.beacon_id, service, "ACOUSTIC", ServiceOutcome::kQueued);

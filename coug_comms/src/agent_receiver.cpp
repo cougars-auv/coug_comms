@@ -23,6 +23,7 @@
 #include <rclcpp/node.hpp>
 #include <rclcpp/node_options.hpp>
 #include <rclcpp_components/register_node_macro.hpp>
+#include <string>
 
 #include "coug_comms/agent_receiver_parameters.hpp"
 #include "coug_comms/utils/protocol_enums.hpp"
@@ -111,7 +112,8 @@ void AgentReceiverNode::callService(const rclcpp::Client<std_srvs::srv::Trigger>
                                     MsgId msg) {
   const std::string service = toString(msg);
   if (!client->service_is_ready()) {
-    RCLCPP_ERROR(get_logger(), "Failed to call %s: service not available.", service.c_str());
+    RCLCPP_ERROR(get_logger(), "Failed to call %s: service '%s' not available.", service.c_str(),
+                 client->get_service_name());
     recordServiceResult(service, "ACOUSTIC", ServiceOutcome::kFailed);
     return;
   }
@@ -120,17 +122,21 @@ void AgentReceiverNode::callService(const rclcpp::Client<std_srvs::srv::Trigger>
       // NOLINTNEXTLINE(performance-unnecessary-value-param)
       [this, service](rclcpp::Client<std_srvs::srv::Trigger>::SharedFuture future) {
         bool success = false;
+        std::string reason;
         try {
-          success = future.get()->success;
+          const auto response = future.get();
+          success = response->success;
+          reason = response->message;
         } catch (const std::exception& e) {
-          RCLCPP_ERROR(get_logger(), "Failed to call %s: %s", service.c_str(), e.what());
+          reason = e.what();
         }
         recordServiceResult(service, "ACOUSTIC",
                             success ? ServiceOutcome::kSucceeded : ServiceOutcome::kFailed);
+        const std::string message = service + (success ? " succeeded. " : " failed. ") + reason;
         if (success) {
-          RCLCPP_INFO(get_logger(), "%s succeeded.", service.c_str());
+          RCLCPP_INFO(get_logger(), "%s", message.c_str());
         } else {
-          RCLCPP_WARN(get_logger(), "%s failed.", service.c_str());
+          RCLCPP_WARN(get_logger(), "%s", message.c_str());
         }
       });
 }
