@@ -128,8 +128,9 @@ void AgentStatusBundlerNode::publishStatus() {
       tf2::doTransform(depth_T_base, map_T_base, map_T_depth_tf);
       status.pressure_depth = map_T_base.position.z;
     } catch (const tf2::TransformException& ex) {
-      RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 1000, "Could not transform %s to %s: %s",
-                           depth_frame.c_str(), params_.base_frame.c_str(), ex.what());
+      RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 1000,
+                           "Failed to look up transform from '%s' to '%s': %s",
+                           params_.base_frame.c_str(), depth_frame.c_str(), ex.what());
       status.pressure_depth = last_depth_->pose.pose.position.z;
     }
   }
@@ -154,8 +155,9 @@ void AgentStatusBundlerNode::publishStatus() {
       map_R_base.normalize();
       status.ahrs_orientation = tf2::toMsg(map_R_base);
     } catch (const tf2::TransformException& ex) {
-      RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 1000, "Could not transform %s to %s: %s",
-                           imu_frame.c_str(), params_.base_frame.c_str(), ex.what());
+      RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 1000,
+                           "Failed to look up transform from '%s' to '%s': %s",
+                           params_.base_frame.c_str(), imu_frame.c_str(), ex.what());
       status.ahrs_orientation = last_imu_->orientation;
     }
   }

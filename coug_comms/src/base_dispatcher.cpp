@@ -89,8 +89,10 @@ BaseDispatcherNode::BaseDispatcherNode(const rclcpp::NodeOptions& options)
   for (const auto& agent_name : params_.agent_list) {
     const int64_t raw_id = this->declare_parameter<int64_t>("beacon_ids." + agent_name, -1);
     if (raw_id < 0 || raw_id > kMaxBeaconId) {
-      RCLCPP_ERROR(get_logger(), "Missing or invalid beacon_ids.%s (got %ld); skipping '%s'.",
-                   agent_name.c_str(), raw_id, agent_name.c_str());
+      RCLCPP_ERROR(
+          get_logger(),
+          "Skipping agent '%s': parameter 'beacon_ids.%s' is missing or invalid (got %ld).",
+          agent_name.c_str(), agent_name.c_str(), raw_id);
       continue;
     }
     registerAgent(agent_name, static_cast<uint8_t>(raw_id), prefix);
@@ -162,7 +164,7 @@ void BaseDispatcherNode::handleServiceRequest(
 
   std_srvs::srv::Trigger::Response res;
   res.success = false;
-  res.message = service + " failed: comms disabled.";
+  res.message = service + " failed: no comms link available.";
   service_handle->send_response(*header, res);
   RCLCPP_ERROR(get_logger(), "%s", res.message.c_str());
   recordServiceResult(beacon_id, service, "NONE", ServiceOutcome::kFailed);
@@ -192,7 +194,7 @@ auto BaseDispatcherNode::directServiceDispatch(
         try {
           success = future.get()->success;
         } catch (const std::exception& e) {
-          RCLCPP_ERROR(get_logger(), "Service call failed: %s", e.what());
+          RCLCPP_ERROR(get_logger(), "Failed to call %s: %s", service.c_str(), e.what());
         }
         std_srvs::srv::Trigger::Response res;
         res.success = success;
@@ -224,7 +226,7 @@ void BaseDispatcherNode::acousticServiceDispatch(
   const std::string service = toString(msg);
   std_srvs::srv::Trigger::Response res;
   res.success = true;
-  res.message = service + " queued.";
+  res.message = service + " queued for acoustic delivery.";
   service_handle->send_response(*header, res);
   RCLCPP_INFO(get_logger(), "%s", res.message.c_str());
   recordServiceResult(agent.beacon_id, service, "ACOUSTIC", ServiceOutcome::kQueued);

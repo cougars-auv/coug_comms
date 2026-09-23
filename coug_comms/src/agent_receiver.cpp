@@ -102,7 +102,8 @@ void AgentReceiverNode::modemRecCallback(
       return;
   }
 
-  RCLCPP_INFO(get_logger(), "Received %s from beacon %d.", toString(msg_id).c_str(), msg->src_id);
+  RCLCPP_INFO(get_logger(), "Received %s command from beacon %d.", toString(msg_id).c_str(),
+              msg->src_id);
   callService(client, msg_id);
 }
 
@@ -110,7 +111,7 @@ void AgentReceiverNode::callService(const rclcpp::Client<std_srvs::srv::Trigger>
                                     MsgId msg) {
   const std::string service = toString(msg);
   if (!client->service_is_ready()) {
-    RCLCPP_ERROR(get_logger(), "Service not available: %s", service.c_str());
+    RCLCPP_ERROR(get_logger(), "Failed to call %s: service not available.", service.c_str());
     recordServiceResult(service, "ACOUSTIC", ServiceOutcome::kFailed);
     return;
   }
@@ -122,14 +123,14 @@ void AgentReceiverNode::callService(const rclcpp::Client<std_srvs::srv::Trigger>
         try {
           success = future.get()->success;
         } catch (const std::exception& e) {
-          RCLCPP_ERROR(get_logger(), "Service call failed: %s; %s", service.c_str(), e.what());
+          RCLCPP_ERROR(get_logger(), "Failed to call %s: %s", service.c_str(), e.what());
         }
         recordServiceResult(service, "ACOUSTIC",
                             success ? ServiceOutcome::kSucceeded : ServiceOutcome::kFailed);
         if (success) {
-          RCLCPP_INFO(get_logger(), "Service call succeeded: %s", service.c_str());
+          RCLCPP_INFO(get_logger(), "%s succeeded.", service.c_str());
         } else {
-          RCLCPP_WARN(get_logger(), "Service call failed: %s", service.c_str());
+          RCLCPP_WARN(get_logger(), "%s failed.", service.c_str());
         }
       });
 }
