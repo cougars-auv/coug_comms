@@ -12,6 +12,7 @@
   <buildtool_depend>generate_parameter_library</buildtool_depend>
 
   <depend>coug_interfaces</depend>
+  <depend>diagnostic_msgs</depend>
   <depend>diagnostic_updater</depend>
   <depend>eigen</depend>
   <depend>geometry_msgs</depend>
