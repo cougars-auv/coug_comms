@@ -42,8 +42,10 @@ def launch_setup(context: LaunchContext, *args: Any, **kwargs: Any) -> list[Acti
     lead_agent = LaunchConfiguration("lead_agent")
     enable_direct_comms = LaunchConfiguration("enable_direct_comms")
     enable_acoustic_comms = LaunchConfiguration("enable_acoustic_comms")
+
     lead_agent_str = lead_agent.perform(context)
     agent_list_str = LaunchConfiguration("agent_list").perform(context)
+    scenario_param_path = LaunchConfiguration("scenario_param_file").perform(context)
 
     agent_list = yaml.safe_load(agent_list_str)
 
@@ -52,9 +54,9 @@ def launch_setup(context: LaunchContext, *args: Any, **kwargs: Any) -> list[Acti
     fleet_param_file = PathJoinSubstitution(
         [EnvironmentVariable("CONFIG_DIR"), "fleet", "coug_comms_params.yaml"]
     )
-    scenario_param_file = (
-        LaunchConfiguration("scenario_param_file").perform(context) or fleet_param_file
-    )
+    scenario_param_file = scenario_param_path or fleet_param_file
+
+    fleet_param_path = os.path.join(config_dir, "fleet", "coug_comms_params.yaml")
 
     poller_modem_frame = f"{lead_agent_str}/modem_link" if lead_agent_str else "base_station"
 
@@ -68,15 +70,16 @@ def launch_setup(context: LaunchContext, *args: Any, **kwargs: Any) -> list[Acti
             "modem_cmd_update_topic": f"/{lead_agent_str}/modem_cmd_update",
         }
 
-    fleet_launch_params = load_launch_params(
-        os.path.join(config_dir, "fleet", "coug_comms_params.yaml"), "/**"
-    )
     beacon_ids = {}
     for agent_ns in agent_list:
-        agent_launch_params = load_launch_params(
-            os.path.join(config_dir, f"{agent_ns}_params.yaml"), f"/{agent_ns}"
-        )
-        beacon_id = agent_launch_params.get("beacon_id", fleet_launch_params.get("beacon_id"))
+        agent_param_path = os.path.join(config_dir, f"{agent_ns}_params.yaml")
+        launch_params = {
+            **load_launch_params(fleet_param_path, "/**"),
+            **load_launch_params(agent_param_path, f"/{agent_ns}"),
+            **load_launch_params(scenario_param_path, "/**"),
+            **load_launch_params(scenario_param_path, f"/{agent_ns}"),
+        }
+        beacon_id = launch_params.get("beacon_id")
         if beacon_id is not None:
             beacon_ids[agent_ns] = beacon_id
 
