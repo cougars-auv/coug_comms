@@ -104,8 +104,8 @@ BaseStatusPollerNode::BaseStatusPollerNode(const rclcpp::NodeOptions& options)
   }
 
   next_poll_allowed_ = now();
-  tick_timer_ = create_wall_timer(std::chrono::duration<double>(params_.tick_period_sec),
-                                  [this] { tickCallback(); });
+  tick_timer_ = create_timer(std::chrono::duration<double>(params_.tick_period_sec),
+                             [this] { tickCallback(); });
 
   RCLCPP_INFO(get_logger(), "Initialization complete.");
 }
