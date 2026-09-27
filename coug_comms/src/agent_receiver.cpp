@@ -124,7 +124,7 @@ void AgentReceiverNode::callService(const rclcpp::Client<std_srvs::srv::Trigger>
         bool success = false;
         std::string reason;
         try {
-          const auto response = future.get();
+          const auto& response = future.get();
           success = response->success;
           reason = response->message;
         } catch (const std::exception& e) {
