@@ -61,17 +61,6 @@ def launch_setup(context: LaunchContext, *args: Any, **kwargs: Any) -> list[Acti
         ),
         Node(
             package="coug_comms",
-            executable="agent_status_stager",
-            name="agent_status_stager_node",
-            parameters=[
-                fleet_param_file,
-                agent_param_file,
-                scenario_param_file,
-                {"use_sim_time": use_sim_time},
-            ],
-        ),
-        Node(
-            package="coug_comms",
             executable="agent_status_bundler",
             name="agent_status_bundler_node",
             parameters=[
@@ -83,6 +72,17 @@ def launch_setup(context: LaunchContext, *args: Any, **kwargs: Any) -> list[Acti
                     "map_frame": "map",
                     "base_frame": base_link_frame,
                 },
+            ],
+        ),
+        Node(
+            package="coug_comms",
+            executable="agent_status_stager",
+            name="agent_status_stager_node",
+            parameters=[
+                fleet_param_file,
+                agent_param_file,
+                scenario_param_file,
+                {"use_sim_time": use_sim_time},
             ],
         ),
     ]

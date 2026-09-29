@@ -104,6 +104,21 @@ def launch_setup(context: LaunchContext, *args: Any, **kwargs: Any) -> list[Acti
         ),
         Node(
             package="coug_comms",
+            executable="base_status_extractor",
+            name="base_status_extractor_node",
+            parameters=[
+                fleet_param_file,
+                scenario_param_file,
+                {
+                    "use_sim_time": use_sim_time,
+                    "agent_list": agent_list,
+                    "map_frame": "map",
+                    "multiagent_base_frame": "base_link",
+                },
+            ],
+        ),
+        Node(
+            package="coug_comms",
             executable="base_status_poller",
             name="base_status_poller_node",
             parameters=[
@@ -118,21 +133,6 @@ def launch_setup(context: LaunchContext, *args: Any, **kwargs: Any) -> list[Acti
                     "beacon_ids": beacon_ids,
                     "parameter_frame": poller_modem_frame,
                     **poller_modem_topics,
-                },
-            ],
-        ),
-        Node(
-            package="coug_comms",
-            executable="base_status_extractor",
-            name="base_status_extractor_node",
-            parameters=[
-                fleet_param_file,
-                scenario_param_file,
-                {
-                    "use_sim_time": use_sim_time,
-                    "agent_list": agent_list,
-                    "map_frame": "map",
-                    "multiagent_base_frame": "base_link",
                 },
             ],
         ),
