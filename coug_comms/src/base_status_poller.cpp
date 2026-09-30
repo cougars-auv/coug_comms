@@ -284,7 +284,7 @@ void BaseStatusPollerNode::publishPolledTransform(const AgentEntry& agent,
   const double horizontal_range = std::sqrt(std::max(range * range - depth * depth, 0.0));
 
   geometry_msgs::msg::TransformStamped tf_msg;
-  tf_msg.header.stamp = now();
+  tf_msg.header.stamp = msg.header.stamp;
   tf_msg.header.frame_id =
       params_.use_parameter_frame ? params_.parameter_frame : msg.header.frame_id;
   tf_msg.child_frame_id = agent.name + "/polled_modem_link";
