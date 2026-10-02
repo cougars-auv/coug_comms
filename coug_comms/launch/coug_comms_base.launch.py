@@ -43,8 +43,8 @@ def launch_setup(context: LaunchContext, *args: Any, **kwargs: Any) -> list[Acti
     enable_direct_comms = LaunchConfiguration("enable_direct_comms")
     enable_acoustic_comms = LaunchConfiguration("enable_acoustic_comms")
 
-    lead_agent_str = lead_agent.perform(context)
     agent_list_str = LaunchConfiguration("agent_list").perform(context)
+    lead_agent_str = lead_agent.perform(context)
     scenario_param_path = LaunchConfiguration("scenario_param_file").perform(context)
 
     agent_list = yaml.safe_load(agent_list_str)
