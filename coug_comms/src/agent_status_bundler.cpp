@@ -57,9 +57,9 @@ AgentStatusBundlerNode::AgentStatusBundlerNode(const rclcpp::NodeOptions& option
       params_.depth_topic, rclcpp::SystemDefaultsQoS(),
       [this](const nav_msgs::msg::Odometry::ConstSharedPtr& msg) { depthCallback(msg); });
 
-  imu_sub_ = create_subscription<sensor_msgs::msg::Imu>(
-      params_.imu_topic, rclcpp::SystemDefaultsQoS(),
-      [this](const sensor_msgs::msg::Imu::ConstSharedPtr& msg) { imuCallback(msg); });
+  ahrs_sub_ = create_subscription<sensor_msgs::msg::Imu>(
+      params_.ahrs_topic, rclcpp::SystemDefaultsQoS(),
+      [this](const sensor_msgs::msg::Imu::ConstSharedPtr& msg) { ahrsCallback(msg); });
 
   status_pub_ = create_publisher<AgentStatus>(params_.status_topic, rclcpp::SystemDefaultsQoS());
 
@@ -75,8 +75,8 @@ void AgentStatusBundlerNode::depthCallback(const nav_msgs::msg::Odometry::ConstS
   last_depth_ = msg;
 }
 
-void AgentStatusBundlerNode::imuCallback(const sensor_msgs::msg::Imu::ConstSharedPtr& msg) {
-  last_imu_ = msg;
+void AgentStatusBundlerNode::ahrsCallback(const sensor_msgs::msg::Imu::ConstSharedPtr& msg) {
+  last_ahrs_ = msg;
 }
 
 void AgentStatusBundlerNode::publishStatus() {
@@ -135,30 +135,30 @@ void AgentStatusBundlerNode::publishStatus() {
     }
   }
 
-  if (last_imu_) {
+  if (last_ahrs_) {
     status.includes_ahrs = true;
 
-    // Transform IMU data into the base frame
-    const std::string imu_frame = last_imu_->header.frame_id;
+    // Transform AHRS data into the base frame
+    const std::string ahrs_frame = last_ahrs_->header.frame_id;
 
-    geometry_msgs::msg::TransformStamped imu_T_base_tf;
+    geometry_msgs::msg::TransformStamped ahrs_T_base_tf;
     try {
-      imu_T_base_tf =
-          tf_buffer_->lookupTransform(imu_frame, params_.base_frame, tf2::TimePointZero);
+      ahrs_T_base_tf =
+          tf_buffer_->lookupTransform(ahrs_frame, params_.base_frame, tf2::TimePointZero);
 
-      tf2::Quaternion map_R_imu;
-      tf2::Quaternion imu_R_base;
-      tf2::fromMsg(last_imu_->orientation, map_R_imu);
-      tf2::fromMsg(imu_T_base_tf.transform.rotation, imu_R_base);
+      tf2::Quaternion map_R_ahrs;
+      tf2::Quaternion ahrs_R_base;
+      tf2::fromMsg(last_ahrs_->orientation, map_R_ahrs);
+      tf2::fromMsg(ahrs_T_base_tf.transform.rotation, ahrs_R_base);
 
-      tf2::Quaternion map_R_base = map_R_imu * imu_R_base;
+      tf2::Quaternion map_R_base = map_R_ahrs * ahrs_R_base;
       map_R_base.normalize();
       status.ahrs_orientation = tf2::toMsg(map_R_base);
     } catch (const tf2::TransformException& ex) {
       RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 1000,
                            "Failed to look up transform from '%s' to '%s': %s",
-                           params_.base_frame.c_str(), imu_frame.c_str(), ex.what());
-      status.ahrs_orientation = last_imu_->orientation;
+                           params_.base_frame.c_str(), ahrs_frame.c_str(), ex.what());
+      status.ahrs_orientation = last_ahrs_->orientation;
     }
   }
 

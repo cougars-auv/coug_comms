@@ -14,7 +14,7 @@ agent_status_bundler_node:
     default_value: "seatrac/depth/odometry"
     validation:
       not_empty<>: []
-  imu_topic:
+  ahrs_topic:
     type: string
     default_value: "seatrac/imu/data"
     validation:

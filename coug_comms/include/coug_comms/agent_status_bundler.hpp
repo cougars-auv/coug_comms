@@ -36,7 +36,7 @@ class AgentStatusBundlerNode : public rclcpp::Node {
 
   void depthCallback(const nav_msgs::msg::Odometry::ConstSharedPtr& msg);
 
-  void imuCallback(const sensor_msgs::msg::Imu::ConstSharedPtr& msg);
+  void ahrsCallback(const sensor_msgs::msg::Imu::ConstSharedPtr& msg);
 
   // --- Helpers ---
   void publishStatus();
@@ -44,7 +44,7 @@ class AgentStatusBundlerNode : public rclcpp::Node {
   // --- ROS Interfaces ---
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr depth_sub_;
-  rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr imu_sub_;
+  rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr ahrs_sub_;
   rclcpp::Publisher<coug_interfaces::msg::AgentStatus>::SharedPtr status_pub_;
 
   std::unique_ptr<tf2_ros::Buffer> tf_buffer_;
@@ -57,7 +57,7 @@ class AgentStatusBundlerNode : public rclcpp::Node {
   // --- State ---
   nav_msgs::msg::Odometry::ConstSharedPtr last_odom_;
   nav_msgs::msg::Odometry::ConstSharedPtr last_depth_;
-  sensor_msgs::msg::Imu::ConstSharedPtr last_imu_;
+  sensor_msgs::msg::Imu::ConstSharedPtr last_ahrs_;
 };
 
 }  // namespace coug_comms
