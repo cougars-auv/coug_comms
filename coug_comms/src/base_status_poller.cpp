@@ -26,6 +26,8 @@
 #include <rclcpp/node_options.hpp>
 #include <rclcpp_components/register_node_macro.hpp>
 #include <string>
+#include <tf2/LinearMath/Quaternion.hpp>
+#include <tf2/LinearMath/Vector3.hpp>
 #include <tf2_ros/transform_broadcaster.hpp>
 #include <utility>
 
@@ -279,18 +281,32 @@ void BaseStatusPollerNode::publishPolledTransform(const AgentEntry& agent,
 
   // Convert FRD -> FLU
   const double azimuth = -msg.usbl_azimuth * kSeatracToRad;
+  const double elevation = msg.usbl_elevation * kSeatracToRad;
+  const double roll = msg.attitude_roll * kSeatracToRad;
+  const double pitch = -msg.attitude_pitch * kSeatracToRad;
   const double range = msg.range_dist * kDecimetersToMeters;
   const double depth = (msg.position_depth - msg.depth_local) * kDecimetersToMeters;
   const double horizontal_range = std::sqrt(std::max(range * range - depth * depth, 0.0));
+
+  // Transform bearing into the modem's leveled frame
+  tf2::Quaternion level_R_modem;
+  level_R_modem.setRPY(roll, pitch, 0.0);
+  const tf2::Vector3 level_dir_agent = tf2::quatRotate(
+      level_R_modem, tf2::Vector3(std::cos(elevation) * std::cos(azimuth),
+                                  std::cos(elevation) * std::sin(azimuth), std::sin(elevation)));
+  const double bearing = std::atan2(level_dir_agent.y(), level_dir_agent.x());
+  const tf2::Vector3 modem_p_agent = tf2::quatRotate(
+      level_R_modem.inverse(), tf2::Vector3(horizontal_range * std::cos(bearing),
+                                            horizontal_range * std::sin(bearing), -depth));
 
   geometry_msgs::msg::TransformStamped tf_msg;
   tf_msg.header.stamp = msg.header.stamp;
   tf_msg.header.frame_id =
       params_.use_parameter_frame ? params_.parameter_frame : msg.header.frame_id;
   tf_msg.child_frame_id = agent.name + "/polled_modem_link";
-  tf_msg.transform.translation.x = horizontal_range * std::cos(azimuth);
-  tf_msg.transform.translation.y = horizontal_range * std::sin(azimuth);
-  tf_msg.transform.translation.z = -depth;
+  tf_msg.transform.translation.x = modem_p_agent.x();
+  tf_msg.transform.translation.y = modem_p_agent.y();
+  tf_msg.transform.translation.z = modem_p_agent.z();
 
   tf_broadcaster_->sendTransform(tf_msg);
 }
