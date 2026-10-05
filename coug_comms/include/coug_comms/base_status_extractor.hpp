@@ -36,7 +36,7 @@ class BaseStatusExtractorNode : public rclcpp::Node {
     rclcpp::Subscription<coug_interfaces::msg::AgentStatus>::SharedPtr status_sub;
     rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_pub;
     rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr depth_pub;
-    rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr imu_pub;
+    rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr ahrs_pub;
   };
 
   // --- Callbacks ---
@@ -54,8 +54,8 @@ class BaseStatusExtractorNode : public rclcpp::Node {
                       const coug_interfaces::msg::AgentStatus::ConstSharedPtr& msg) const
       -> nav_msgs::msg::Odometry;
 
-  auto convertToImu(const std::string& agent_name,
-                    const coug_interfaces::msg::AgentStatus::ConstSharedPtr& msg) const
+  auto convertToAhrs(const std::string& agent_name,
+                     const coug_interfaces::msg::AgentStatus::ConstSharedPtr& msg) const
       -> sensor_msgs::msg::Imu;
 
   // --- Parameters ---

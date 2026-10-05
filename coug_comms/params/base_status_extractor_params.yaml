@@ -17,7 +17,7 @@ base_status_extractor_node:
     default_value: "base/seatrac/depth/odometry"
     validation:
       not_empty<>: []
-  imu_topic:
+  ahrs_topic:
     type: string
     default_value: "base/seatrac/imu/data"
     validation:

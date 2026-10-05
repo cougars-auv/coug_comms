@@ -72,7 +72,7 @@ void BaseStatusExtractorNode::statusCallback(const std::string& agent_name,
     agent.depth_pub->publish(convertToDepth(agent_name, msg));
   }
   if (msg->includes_ahrs) {
-    agent.imu_pub->publish(convertToImu(agent_name, msg));
+    agent.ahrs_pub->publish(convertToAhrs(agent_name, msg));
   }
 }
 
@@ -84,8 +84,8 @@ void BaseStatusExtractorNode::registerAgent(const std::string& agent_name) {
   agent.depth_pub = create_publisher<nav_msgs::msg::Odometry>(
       build_name(agent_name, params_.depth_topic), rclcpp::SystemDefaultsQoS());
 
-  agent.imu_pub = create_publisher<sensor_msgs::msg::Imu>(build_name(agent_name, params_.imu_topic),
-                                                          rclcpp::SystemDefaultsQoS());
+  agent.ahrs_pub = create_publisher<sensor_msgs::msg::Imu>(
+      build_name(agent_name, params_.ahrs_topic), rclcpp::SystemDefaultsQoS());
 
   agent.status_sub = create_subscription<AgentStatus>(
       build_name(agent_name, params_.status_topic), rclcpp::SystemDefaultsQoS(),
@@ -127,19 +127,19 @@ auto BaseStatusExtractorNode::convertToDepth(const std::string& agent_name,
   return depth_msg;
 }
 
-auto BaseStatusExtractorNode::convertToImu(const std::string& agent_name,
-                                           const AgentStatus::ConstSharedPtr& msg) const
+auto BaseStatusExtractorNode::convertToAhrs(const std::string& agent_name,
+                                            const AgentStatus::ConstSharedPtr& msg) const
     -> sensor_msgs::msg::Imu {
-  sensor_msgs::msg::Imu imu_msg;
-  imu_msg.header = msg->header;
-  imu_msg.header.frame_id = build_frame(agent_name, params_.multiagent_base_frame);
-  imu_msg.orientation = msg->ahrs_orientation;
+  sensor_msgs::msg::Imu ahrs_msg;
+  ahrs_msg.header = msg->header;
+  ahrs_msg.header.frame_id = build_frame(agent_name, params_.multiagent_base_frame);
+  ahrs_msg.orientation = msg->ahrs_orientation;
 
-  imu_msg.orientation_covariance[0] = kUnknownCovariance;
-  imu_msg.linear_acceleration_covariance[0] = kUnknownCovariance;
-  imu_msg.angular_velocity_covariance[0] = kUnknownCovariance;
+  ahrs_msg.orientation_covariance[0] = kUnknownCovariance;
+  ahrs_msg.linear_acceleration_covariance[0] = kUnknownCovariance;
+  ahrs_msg.angular_velocity_covariance[0] = kUnknownCovariance;
 
-  return imu_msg;
+  return ahrs_msg;
 }
 
 }  // namespace coug_comms
