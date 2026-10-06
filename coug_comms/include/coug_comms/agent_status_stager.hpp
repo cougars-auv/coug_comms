@@ -31,6 +31,10 @@ class AgentStatusStagerNode : public rclcpp::Node {
   // --- Callbacks ---
   void statusCallback(const coug_interfaces::msg::AgentStatus::ConstSharedPtr& msg);
 
+  // --- Helpers ---
+  static auto convertToModemSend(const coug_interfaces::msg::AgentStatus::ConstSharedPtr& msg)
+      -> seatrac_interfaces::msg::ModemSend;
+
   // --- ROS Interfaces ---
   rclcpp::Subscription<coug_interfaces::msg::AgentStatus>::SharedPtr status_sub_;
   rclcpp::Publisher<seatrac_interfaces::msg::ModemSend>::SharedPtr modem_send_pub_;

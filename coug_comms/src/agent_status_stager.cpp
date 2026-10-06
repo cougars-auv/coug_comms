@@ -50,11 +50,16 @@ AgentStatusStagerNode::AgentStatusStagerNode(const rclcpp::NodeOptions& options)
 }
 
 void AgentStatusStagerNode::statusCallback(const AgentStatus::ConstSharedPtr& msg) {
+  modem_send_pub_->publish(convertToModemSend(msg));
+}
+
+auto AgentStatusStagerNode::convertToModemSend(const AgentStatus::ConstSharedPtr& msg)
+    -> seatrac_interfaces::msg::ModemSend {
   seatrac_interfaces::msg::ModemSend send_msg;
   send_msg.msg_id = CID_DAT_QUEUE_SET;
   send_msg.dest_id = BEACON_ALL;
   send_msg.packet_len = encodeStatus(*msg, send_msg.packet_data);
-  modem_send_pub_->publish(send_msg);
+  return send_msg;
 }
 
 }  // namespace coug_comms
