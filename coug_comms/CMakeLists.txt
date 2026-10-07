@@ -40,8 +40,6 @@ set(
   base_status_poller
 )
 
-set(COUG_COMMS_NODE_SOURCES "")
-set(COUG_COMMS_PARAM_LIBRARIES "")
 foreach(node IN LISTS COUG_COMMS_NODES)
   generate_parameter_library(
     ${node}_parameters
@@ -51,7 +49,7 @@ foreach(node IN LISTS COUG_COMMS_NODES)
   list(APPEND COUG_COMMS_PARAM_LIBRARIES "${node}_parameters")
 endforeach()
 
-ament_auto_add_library(coug_comms_component SHARED NO_TARGET_LINK_LIBRARIES
+ament_auto_add_library(coug_comms_component SHARED
   ${COUG_COMMS_NODE_SOURCES}
 )
 
@@ -71,8 +69,7 @@ rclcpp_components_register_nodes(coug_comms_component
 )
 
 foreach(node IN LISTS COUG_COMMS_NODES)
-  ament_auto_add_executable(${node} NO_TARGET_LINK_LIBRARIES "src/${node}_node.cpp")
-  target_link_libraries(${node} coug_comms_component)
+  ament_auto_add_executable(${node} "src/${node}_node.cpp")
 endforeach()
 
 if(BUILD_TESTING)
