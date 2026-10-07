@@ -55,8 +55,6 @@ ament_auto_add_library(coug_comms_component SHARED NO_TARGET_LINK_LIBRARIES
   ${COUG_COMMS_NODE_SOURCES}
 )
 
-target_compile_features(coug_comms_component PUBLIC cxx_std_17)
-
 target_link_libraries(
   coug_comms_component
   ${COUG_COMMS_PARAM_LIBRARIES}
