@@ -30,7 +30,8 @@
 
 namespace coug_comms::utils {
 
-using DatPayload = std::array<uint8_t, 30>;
+inline constexpr std::size_t kMaxDatPayloadLen = 30;
+using DatPayload = std::array<uint8_t, kMaxDatPayloadLen>;
 
 inline constexpr int kCovDim = 6;
 inline constexpr int kCovStride = kCovDim + 1;
