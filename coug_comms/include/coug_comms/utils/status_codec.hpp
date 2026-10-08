@@ -47,6 +47,7 @@ static_assert(kStatusPacketLen <= std::tuple_size<DatPayload>::value,
               "An encoded status must fit in one acoustic DAT payload");
 
 inline constexpr double kCentimetersPerMeter = 100.0;
+inline constexpr double kMinQuaternionNorm = 1.0e-9;
 
 // The float16 normal range, outside which variances lose precision or overflow
 inline constexpr double kMinEncodedVariance = 6.103515625e-05;  // 2^-14
@@ -106,7 +107,7 @@ inline auto encodeQuaternion(const geometry_msgs::msg::Quaternion& q) -> uint32_
   std::array<double, 4> q_vec = {q.x, q.y, q.z, q.w};
   double norm = std::sqrt(q_vec[0] * q_vec[0] + q_vec[1] * q_vec[1] + q_vec[2] * q_vec[2] +
                           q_vec[3] * q_vec[3]);
-  if (!std::isfinite(norm) || norm < 1.0e-9) {
+  if (!std::isfinite(norm) || norm < kMinQuaternionNorm) {
     q_vec[0] = q_vec[1] = q_vec[2] = 0.0;
     q_vec[3] = norm = 1.0;
   }
