@@ -1,0 +1,115 @@
+// Copyright 2026 BYU FROST Lab
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#include <gtest/gtest.h>
+
+#include <array>
+#include <cmath>
+#include <cstddef>
+
+#include "coug_comms/utils/status_codec.hpp"
+#include "coug_interfaces/msg/agent_status.hpp"
+#include "geometry_msgs/msg/quaternion.hpp"
+
+namespace {
+
+using coug_comms::utils::DatPayload;
+using coug_comms::utils::decodeStatus;
+using coug_comms::utils::encodeStatus;
+using coug_comms::utils::kCovStride;
+using coug_comms::utils::kMaxEncodedVariance;
+using coug_comms::utils::kMinEncodedVariance;
+using coug_comms::utils::kOrientationVarianceScale;
+using coug_comms::utils::kPositionVarianceScale;
+using coug_comms::utils::kStatusPacketLen;
+using coug_interfaces::msg::AgentStatus;
+
+constexpr double kMetersTol = 0.005;    // exactly half the 1 cm quantization step
+constexpr double kQuatTol = 0.0025;     // the rebuilt component stacks all three 0.0007 half-steps
+constexpr double kVarianceTol = 0.001;  // 2x margin on float16's ~0.05% worst-case relative error
+
+auto makeQuat(double x, double y, double z, double w) -> geometry_msgs::msg::Quaternion {
+  const double norm = std::sqrt(x * x + y * y + z * z + w * w);
+  geometry_msgs::msg::Quaternion q;
+  q.x = x / norm;
+  q.y = y / norm;
+  q.z = z / norm;
+  q.w = w / norm;
+  return q;
+}
+
+void expectQuatNear(const geometry_msgs::msg::Quaternion& actual,
+                    const geometry_msgs::msg::Quaternion& expected, const char* label) {
+  SCOPED_TRACE(label);
+  EXPECT_NEAR(actual.x, expected.x, kQuatTol);
+  EXPECT_NEAR(actual.y, expected.y, kQuatTol);
+  EXPECT_NEAR(actual.z, expected.z, kQuatTol);
+  EXPECT_NEAR(actual.w, expected.w, kQuatTol);
+}
+
+}  // namespace
+
+TEST(StatusCodecTest, RoundTrip) {
+  AgentStatus in;
+  in.local_odometry.position.x = 12.34;
+  in.local_odometry.position.y = -56.78;
+  in.local_odometry.position.z = 3.20;
+  in.includes_depth = true;
+  in.pressure_depth = 4.05;
+  in.includes_ahrs = true;
+  in.local_odometry.orientation = makeQuat(-0.1, 0.2, -0.3, 0.9);
+  in.ahrs_orientation = makeQuat(0.3, -0.4, 0.1, 0.8);
+  const std::array<double, 6> variances = {1.0e-9, 0.25, 1.0e9, 1.0e-12, 3.0e-6, 1.0e6};
+  for (int i = 0; i < 6; ++i) {
+    in.odometry_covariance[static_cast<std::size_t>(i) * kCovStride] =
+        variances[static_cast<std::size_t>(i)];
+  }
+
+  DatPayload buf{};
+  ASSERT_EQ(encodeStatus(in, buf), kStatusPacketLen);
+
+  AgentStatus out;
+  out.header.frame_id = "coug1/base_link";
+  out.odometry_covariance.fill(99.0);
+  ASSERT_TRUE(decodeStatus(buf, kStatusPacketLen, out));
+
+  EXPECT_NEAR(out.local_odometry.position.x, 12.34, kMetersTol);
+  EXPECT_NEAR(out.local_odometry.position.y, -56.78, kMetersTol);
+  EXPECT_NEAR(out.local_odometry.position.z, 3.20, kMetersTol);
+  EXPECT_NEAR(out.pressure_depth, 4.05, kMetersTol);
+
+  expectQuatNear(out.local_odometry.orientation, in.local_odometry.orientation, "local_odometry");
+  expectQuatNear(out.ahrs_orientation, in.ahrs_orientation, "ahrs_orientation");
+
+  const std::array<double, 6> expected = {kMinEncodedVariance / kPositionVarianceScale,
+                                          0.25,
+                                          kMaxEncodedVariance / kPositionVarianceScale,
+                                          kMinEncodedVariance / kOrientationVarianceScale,
+                                          3.0e-6,
+                                          kMaxEncodedVariance / kOrientationVarianceScale};
+  for (int i = 0; i < 6; ++i) {
+    const double want = expected[static_cast<std::size_t>(i)];
+    EXPECT_NEAR(out.odometry_covariance[static_cast<std::size_t>(i) * kCovStride], want,
+                want * kVarianceTol)
+        << "at diagonal " << i;
+  }
+  for (const int off_diagonal : {1, 6, 11, 34}) {
+    EXPECT_DOUBLE_EQ(out.odometry_covariance[off_diagonal], 0.0) << "at " << off_diagonal;
+  }
+
+  EXPECT_TRUE(out.includes_depth);
+  EXPECT_TRUE(out.includes_ahrs);
+
+  EXPECT_EQ(out.header.frame_id, "coug1/base_link");  // the header is the caller's to fill in
+}

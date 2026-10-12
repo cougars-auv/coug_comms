@@ -1,0 +1,96 @@
+# Copyright 2026 BYU FROST Lab
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+cmake_minimum_required(VERSION 3.22)
+project(coug_comms)
+
+if(NOT CMAKE_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD 17)
+  set(CMAKE_CXX_STANDARD_REQUIRED ON)
+  set(CMAKE_CXX_EXTENSIONS OFF)
+endif()
+
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
+
+find_package(ament_cmake_auto REQUIRED)
+ament_auto_find_build_dependencies()
+
+find_package(Eigen3 REQUIRED)
+
+set(
+  COUG_COMMS_NODES
+  agent_receiver
+  agent_status_bundler
+  agent_status_stager
+  base_dispatcher
+  base_status_extractor
+  base_status_poller
+)
+
+foreach(node IN LISTS COUG_COMMS_NODES)
+  generate_parameter_library(
+    ${node}_parameters
+    "params/${node}_params.yaml"
+  )
+  list(APPEND COUG_COMMS_NODE_SOURCES "src/${node}.cpp")
+  list(APPEND COUG_COMMS_PARAM_LIBRARIES "${node}_parameters")
+endforeach()
+
+ament_auto_add_library(coug_comms_component SHARED
+  ${COUG_COMMS_NODE_SOURCES}
+)
+
+target_link_libraries(
+  coug_comms_component
+  ${COUG_COMMS_PARAM_LIBRARIES}
+  Eigen3::Eigen
+)
+
+rclcpp_components_register_nodes(coug_comms_component
+  "coug_comms::AgentReceiverNode"
+  "coug_comms::AgentStatusBundlerNode"
+  "coug_comms::AgentStatusStagerNode"
+  "coug_comms::BaseDispatcherNode"
+  "coug_comms::BaseStatusExtractorNode"
+  "coug_comms::BaseStatusPollerNode"
+)
+
+foreach(node IN LISTS COUG_COMMS_NODES)
+  ament_auto_add_executable(${node} "src/${node}_node.cpp")
+endforeach()
+
+if(BUILD_TESTING)
+  find_package(ament_cmake_gtest REQUIRED)
+
+  ament_add_gtest(test_status_codec test/test_status_codec.cpp)
+  target_include_directories(
+    test_status_codec
+    PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include"
+  )
+  target_link_libraries(
+    test_status_codec
+    Eigen3::Eigen
+    coug_interfaces::coug_interfaces__rosidl_typesupport_cpp
+    geometry_msgs::geometry_msgs__rosidl_typesupport_cpp
+  )
+endif()
+
+ament_auto_package(
+  INSTALL_TO_SHARE
+  config
+  launch
+  USE_SCOPED_HEADER_INSTALL_DIR
+)

@@ -1,0 +1,11 @@
+agent_status_stager_node:
+  modem_send_topic:
+    type: string
+    default_value: "modem_send"
+    validation:
+      not_empty<>: []
+  status_topic:
+    type: string
+    default_value: "agent/status"
+    validation:
+      not_empty<>: []

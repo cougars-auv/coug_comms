@@ -1,0 +1,339 @@
+// Copyright 2026 BYU FROST Lab
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#include "coug_comms/base_status_poller.hpp"
+
+#include <algorithm>
+#include <chrono>
+#include <cmath>
+#include <cstdint>
+#include <diagnostic_updater/diagnostic_status_wrapper.hpp>
+#include <geometry_msgs/msg/transform_stamped.hpp>
+#include <memory>
+#include <rclcpp/logging.hpp>
+#include <rclcpp/node.hpp>
+#include <rclcpp/node_options.hpp>
+#include <rclcpp_components/register_node_macro.hpp>
+#include <string>
+#include <tf2/LinearMath/Quaternion.hpp>
+#include <tf2/LinearMath/Vector3.hpp>
+#include <tf2_ros/transform_broadcaster.hpp>
+#include <utility>
+
+#include "coug_comms/base_status_poller_parameters.hpp"
+#include "coug_comms/utils/protocol_enums.hpp"
+#include "coug_comms/utils/seatrac_enums.hpp"
+#include "coug_comms/utils/status_codec.hpp"
+#include "coug_interfaces/msg/agent_status.hpp"
+#include "diagnostic_msgs/msg/diagnostic_status.hpp"
+#include "seatrac_interfaces/msg/modem_cmd_update.hpp"
+#include "seatrac_interfaces/msg/modem_rec.hpp"
+#include "seatrac_interfaces/msg/modem_send.hpp"
+
+namespace coug_comms {
+
+using coug_interfaces::msg::AgentStatus;
+using utils::CID_DAT_SEND;
+using utils::CST_XCVR_RESP_TIMEOUT;
+using utils::decodeStatus;
+using utils::MSG_REQX;
+using utils::MsgId;
+
+namespace {
+
+constexpr double kDecimetersToMeters = 0.1;
+constexpr double kSeatracToRad = M_PI / 1800.0;
+constexpr int kMaxBeaconId = 15;
+
+auto build_name(const std::string& agent, const std::string& sub) -> std::string {
+  return "/" + agent + "/" + sub;
+}
+
+}  // namespace
+
+BaseStatusPollerNode::BaseStatusPollerNode(const rclcpp::NodeOptions& options)
+    : Node("base_status_poller_node", options), diagnostic_updater_(this) {
+  param_listener_ =
+      std::make_shared<base_status_poller_node::ParamListener>(get_node_parameters_interface());
+  params_ = param_listener_->get_params();
+
+  tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
+
+  modem_rec_sub_ = create_subscription<seatrac_interfaces::msg::ModemRec>(
+      params_.modem_rec_topic, rclcpp::SystemDefaultsQoS(),
+      [this](const seatrac_interfaces::msg::ModemRec::ConstSharedPtr& msg) {
+        modemRecCallback(msg);
+      });
+
+  modem_cmd_update_sub_ = create_subscription<seatrac_interfaces::msg::ModemCmdUpdate>(
+      params_.modem_cmd_update_topic, rclcpp::SystemDefaultsQoS(),
+      [this](const seatrac_interfaces::msg::ModemCmdUpdate::ConstSharedPtr& msg) {
+        modemCmdUpdateCallback(msg);
+      });
+
+  modem_send_pub_ = create_publisher<seatrac_interfaces::msg::ModemSend>(
+      params_.modem_send_topic, rclcpp::SystemDefaultsQoS());
+
+  std::string prefix;
+  if (params_.publish_diagnostics) {
+    const std::string ns = this->get_namespace();
+    const std::string clean_ns = (ns == "/") ? "" : ns;
+    diagnostic_updater_.setHardwareID(clean_ns + "/base_status_poller_node");
+    prefix = clean_ns.empty() ? "" : "[" + clean_ns + "] ";
+  }
+
+  for (const auto& agent_name : params_.agent_list) {
+    const int64_t raw_id = this->declare_parameter<int64_t>("beacon_ids." + agent_name, -1);
+    if (raw_id < 0 || raw_id > kMaxBeaconId) {
+      RCLCPP_ERROR(
+          get_logger(),
+          "Skipping agent '%s': parameter 'beacon_ids.%s' is missing or invalid (got %ld).",
+          agent_name.c_str(), agent_name.c_str(), raw_id);
+      continue;
+    }
+    registerAgent(agent_name, static_cast<uint8_t>(raw_id), prefix);
+  }
+
+  next_poll_allowed_ = now();
+  tick_timer_ = create_timer(std::chrono::duration<double>(params_.tick_period_sec),
+                             [this] { tickCallback(); });
+
+  RCLCPP_INFO(get_logger(), "Initialization complete.");
+}
+
+void BaseStatusPollerNode::tickCallback() {
+  if (awaiting_response_ && (now() - request_time_).seconds() > params_.response_timeout_sec) {
+    failPendingRequest("no response from the modem driver");
+    return;
+  }
+  pollNextIfReady();
+}
+
+void BaseStatusPollerNode::modemRecCallback(
+    const seatrac_interfaces::msg::ModemRec::ConstSharedPtr& msg) {
+  if (!awaiting_response_ || !msg->local_flag || msg->src_id != pending_beacon_) {
+    return;
+  }
+
+  auto it = agents_.find(pending_beacon_);
+  if (it == agents_.end()) {
+    failPendingRequest("no agent is registered for this beacon");
+    return;
+  }
+
+  AgentStatus status;
+  if (!decodeStatus(msg->packet_data, msg->packet_len, status)) {
+    failPendingRequest("status payload could not be decoded");
+    return;
+  }
+
+  status.includes_range = msg->includes_range;
+  status.range_dist = msg->includes_range ? msg->range_dist * kDecimetersToMeters : 0.0;
+
+  // Convert FRD -> FLU
+  status.includes_usbl = msg->includes_usbl;
+  status.usbl_azimuth = msg->includes_usbl ? -msg->usbl_azimuth * kSeatracToRad : 0.0;
+  status.usbl_elevation = msg->includes_usbl ? msg->usbl_elevation * kSeatracToRad : 0.0;
+
+  status.includes_position = msg->includes_position;
+  status.position_depth = msg->includes_position ? msg->position_depth * kDecimetersToMeters : 0.0;
+
+  status.header.frame_id =
+      params_.use_parameter_frame ? params_.parameter_frame : msg->header.frame_id;
+
+  publishStatus(it->second, status, "ACOUSTIC");
+  publishPolledTransform(it->second, *msg);
+
+  finishPendingRequest();
+}
+
+void BaseStatusPollerNode::modemCmdUpdateCallback(
+    const seatrac_interfaces::msg::ModemCmdUpdate::ConstSharedPtr& msg) {
+  if (!awaiting_response_ || msg->target_id != pending_beacon_) {
+    return;
+  }
+  if (msg->command_status_code != CST_XCVR_RESP_TIMEOUT) {
+    return;
+  }
+
+  failPendingRequest("acoustic response timed out");
+}
+
+void BaseStatusPollerNode::registerAgent(const std::string& agent_name, uint8_t beacon_id,
+                                         const std::string& diag_prefix) {
+  AgentEntry agent;
+  agent.name = agent_name;
+  agent.beacon_id = beacon_id;
+  agent.is_lead = (agent_name == params_.lead_agent);
+  agent.status_pub = create_publisher<AgentStatus>(build_name(agent_name, params_.status_topic),
+                                                   rclcpp::SystemDefaultsQoS());
+  agent.last_response_time = now();
+
+  if (params_.enable_direct_comms || agent.is_lead) {
+    agent.direct_status_sub = create_subscription<AgentStatus>(
+        build_name(agent_name, params_.direct_status_topic), rclcpp::SystemDefaultsQoS(),
+        [this, beacon_id](const AgentStatus::ConstSharedPtr& msg) {
+          auto it = agents_.find(beacon_id);
+          if (it == agents_.end()) {
+            return;
+          }
+          it->second.last_direct_heartbeat_time = now().seconds();
+          publishStatus(it->second, *msg, "DIRECT");
+        });
+  }
+
+  if (!agent.is_lead) {
+    beacon_order_.push_back(beacon_id);
+  }
+  agents_.emplace(beacon_id, std::move(agent));
+
+  if (params_.publish_diagnostics) {
+    diagnostic_updater_.add(diag_prefix + "Polling Status (" + agent_name + ")",
+                            [this, beacon_id](diagnostic_updater::DiagnosticStatusWrapper& stat) {
+                              checkAgentPollStatus(stat, beacon_id);
+                            });
+  }
+
+  RCLCPP_INFO(get_logger(), "Registered agent '%s' (beacon %d).", agent_name.c_str(), beacon_id);
+}
+
+void BaseStatusPollerNode::pollNextIfReady() {
+  if (awaiting_response_ || beacon_order_.empty()) {
+    return;
+  }
+  if (now() < next_poll_allowed_) {
+    return;
+  }
+
+  AgentEntry& agent = agents_.at(beacon_order_[next_beacon_idx_]);
+  next_beacon_idx_ = (next_beacon_idx_ + 1) % beacon_order_.size();
+
+  const bool direct_link_up =
+      agent.last_direct_heartbeat_time > 0.0 &&
+      now().seconds() - agent.last_direct_heartbeat_time < params_.direct_timeout_sec;
+  if (params_.enable_direct_comms && direct_link_up) {
+    scheduleNextPoll();
+    return;
+  }
+  if (params_.enable_acoustic_comms) {
+    sendAcousticPoll(agent);
+    return;
+  }
+  scheduleNextPoll();
+}
+
+void BaseStatusPollerNode::scheduleNextPoll() {
+  next_poll_allowed_ = now() + rclcpp::Duration::from_seconds(params_.poll_period_sec);
+}
+
+void BaseStatusPollerNode::sendAcousticPoll(AgentEntry& agent) {
+  seatrac_interfaces::msg::ModemSend send_msg;
+  send_msg.msg_id = CID_DAT_SEND;
+  send_msg.dest_id = agent.beacon_id;
+  send_msg.msg_type = MSG_REQX;
+  send_msg.packet_len = 1;
+  send_msg.packet_data[0] = static_cast<uint8_t>(MsgId::kStatusRequest);
+  modem_send_pub_->publish(send_msg);
+
+  awaiting_response_ = true;
+  pending_beacon_ = agent.beacon_id;
+  request_time_ = now();
+}
+
+void BaseStatusPollerNode::publishStatus(AgentEntry& agent, AgentStatus status,
+                                         const std::string& transport) {
+  status.header.stamp = now();
+  agent.status_pub->publish(status);
+
+  agent.responses++;
+  agent.last_transport = transport;
+  agent.last_response_time = now();
+}
+
+void BaseStatusPollerNode::finishPendingRequest() {
+  awaiting_response_ = false;
+  scheduleNextPoll();
+  pollNextIfReady();
+}
+
+void BaseStatusPollerNode::failPendingRequest(const std::string& reason) {
+  RCLCPP_WARN(get_logger(), "Status poll of beacon %d failed: %s.", pending_beacon_,
+              reason.c_str());
+  finishPendingRequest();
+}
+
+void BaseStatusPollerNode::publishPolledTransform(const AgentEntry& agent,
+                                                  const seatrac_interfaces::msg::ModemRec& msg) {
+  if (!msg.includes_usbl || !msg.includes_range || !msg.includes_position) {
+    return;
+  }
+
+  // Convert FRD -> FLU
+  const double azimuth = -msg.usbl_azimuth * kSeatracToRad;
+  const double elevation = msg.usbl_elevation * kSeatracToRad;
+  const double roll = msg.attitude_roll * kSeatracToRad;
+  const double pitch = -msg.attitude_pitch * kSeatracToRad;
+  const double range = msg.range_dist * kDecimetersToMeters;
+  const double depth = (msg.position_depth - msg.depth_local) * kDecimetersToMeters;
+  const double horizontal_range = std::sqrt(std::max(range * range - depth * depth, 0.0));
+
+  // Transform bearing into the modem's leveled frame
+  tf2::Quaternion level_R_modem;
+  level_R_modem.setRPY(roll, pitch, 0.0);
+  const tf2::Vector3 level_dir_agent = tf2::quatRotate(
+      level_R_modem, tf2::Vector3(std::cos(elevation) * std::cos(azimuth),
+                                  std::cos(elevation) * std::sin(azimuth), std::sin(elevation)));
+  const double bearing = std::atan2(level_dir_agent.y(), level_dir_agent.x());
+  const tf2::Vector3 modem_p_agent = tf2::quatRotate(
+      level_R_modem.inverse(), tf2::Vector3(horizontal_range * std::cos(bearing),
+                                            horizontal_range * std::sin(bearing), -depth));
+
+  geometry_msgs::msg::TransformStamped tf_msg;
+  tf_msg.header.stamp = msg.header.stamp;
+  tf_msg.header.frame_id =
+      params_.use_parameter_frame ? params_.parameter_frame : msg.header.frame_id;
+  tf_msg.child_frame_id = agent.name + "/polled_modem_link";
+  tf_msg.transform.translation.x = modem_p_agent.x();
+  tf_msg.transform.translation.y = modem_p_agent.y();
+  tf_msg.transform.translation.z = modem_p_agent.z();
+
+  tf_broadcaster_->sendTransform(tf_msg);
+}
+
+void BaseStatusPollerNode::checkAgentPollStatus(diagnostic_updater::DiagnosticStatusWrapper& stat,
+                                                uint8_t beacon_id) {
+  const AgentEntry& agent = agents_.at(beacon_id);
+
+  const double direct_heartbeat_age = (agent.last_direct_heartbeat_time > 0.0)
+                                          ? (now().seconds() - agent.last_direct_heartbeat_time)
+                                          : -1.0;
+  stat.add("Time Since Direct Heartbeat (s)", direct_heartbeat_age);
+
+  const double time_since =
+      (agent.responses > 0) ? (now() - agent.last_response_time).seconds() : -1.0;
+  if (agent.responses > 0) {
+    stat.add("Last Transport", agent.last_transport);
+  }
+  stat.add("Time Since Last (s)", time_since);
+
+  if (agent.responses == 0 || time_since > params_.diagnostic_timeout_sec) {
+    stat.summary(diagnostic_msgs::msg::DiagnosticStatus::WARN, "Agent is unreachable.");
+  } else {
+    stat.summary(diagnostic_msgs::msg::DiagnosticStatus::OK, "Polled status acquired.");
+  }
+}
+
+}  // namespace coug_comms
+
+RCLCPP_COMPONENTS_REGISTER_NODE(coug_comms::BaseStatusPollerNode)

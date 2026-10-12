@@ -1,0 +1,31 @@
+agent_status_bundler_node:
+  status_topic:
+    type: string
+    default_value: "agent/status"
+    validation:
+      not_empty<>: []
+  odom_topic:
+    type: string
+    default_value: "odometry/global"
+    validation:
+      not_empty<>: []
+  depth_topic:
+    type: string
+    default_value: "seatrac/depth/odometry"
+    validation:
+      not_empty<>: []
+  ahrs_topic:
+    type: string
+    default_value: "seatrac/imu/data"
+    validation:
+      not_empty<>: []
+  map_frame:
+    type: string
+    default_value: "map"
+    validation:
+      not_empty<>: []
+  base_frame:
+    type: string
+    default_value: "base_link"
+    validation:
+      not_empty<>: []

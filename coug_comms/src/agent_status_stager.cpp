@@ -1,0 +1,67 @@
+// Copyright 2026 BYU FROST Lab
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#include "coug_comms/agent_status_stager.hpp"
+
+#include <memory>
+#include <rclcpp/logging.hpp>
+#include <rclcpp/node.hpp>
+#include <rclcpp/node_options.hpp>
+#include <rclcpp_components/register_node_macro.hpp>
+
+#include "coug_comms/agent_status_stager_parameters.hpp"
+#include "coug_comms/utils/seatrac_enums.hpp"
+#include "coug_comms/utils/status_codec.hpp"
+#include "coug_interfaces/msg/agent_status.hpp"
+#include "seatrac_interfaces/msg/modem_send.hpp"
+
+namespace coug_comms {
+
+using coug_interfaces::msg::AgentStatus;
+using utils::BEACON_ALL;
+using utils::CID_DAT_QUEUE_SET;
+using utils::encodeStatus;
+
+AgentStatusStagerNode::AgentStatusStagerNode(const rclcpp::NodeOptions& options)
+    : Node("agent_status_stager_node", options) {
+  param_listener_ =
+      std::make_shared<agent_status_stager_node::ParamListener>(get_node_parameters_interface());
+  params_ = param_listener_->get_params();
+
+  status_sub_ = create_subscription<AgentStatus>(
+      params_.status_topic, rclcpp::SystemDefaultsQoS(),
+      [this](const AgentStatus::ConstSharedPtr& msg) { statusCallback(msg); });
+
+  modem_send_pub_ = create_publisher<seatrac_interfaces::msg::ModemSend>(
+      params_.modem_send_topic, rclcpp::SystemDefaultsQoS());
+
+  RCLCPP_INFO(get_logger(), "Initialization complete.");
+}
+
+void AgentStatusStagerNode::statusCallback(const AgentStatus::ConstSharedPtr& msg) {
+  modem_send_pub_->publish(convertToModemSend(msg));
+}
+
+auto AgentStatusStagerNode::convertToModemSend(const AgentStatus::ConstSharedPtr& msg)
+    -> seatrac_interfaces::msg::ModemSend {
+  seatrac_interfaces::msg::ModemSend send_msg;
+  send_msg.msg_id = CID_DAT_QUEUE_SET;
+  send_msg.dest_id = BEACON_ALL;
+  send_msg.packet_len = encodeStatus(*msg, send_msg.packet_data);
+  return send_msg;
+}
+
+}  // namespace coug_comms
+
+RCLCPP_COMPONENTS_REGISTER_NODE(coug_comms::AgentStatusStagerNode)
