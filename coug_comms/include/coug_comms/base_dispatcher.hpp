@@ -14,10 +14,19 @@
 
 #pragma once
 
+#include <rmw/types.h>
+
+#include <cstdint>
 #include <deque>
+#include <diagnostic_updater/diagnostic_status_wrapper.hpp>
 #include <diagnostic_updater/diagnostic_updater.hpp>
 #include <memory>
-#include <rclcpp/rclcpp.hpp>
+#include <rclcpp/client.hpp>
+#include <rclcpp/node.hpp>
+#include <rclcpp/node_options.hpp>
+#include <rclcpp/publisher.hpp>
+#include <rclcpp/service.hpp>
+#include <rclcpp/subscription.hpp>
 #include <seatrac_interfaces/msg/modem_send.hpp>
 #include <std_srvs/srv/trigger.hpp>
 #include <string>

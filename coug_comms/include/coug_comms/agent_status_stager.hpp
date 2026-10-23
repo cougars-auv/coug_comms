@@ -15,7 +15,10 @@
 #pragma once
 
 #include <memory>
-#include <rclcpp/rclcpp.hpp>
+#include <rclcpp/node.hpp>
+#include <rclcpp/node_options.hpp>
+#include <rclcpp/publisher.hpp>
+#include <rclcpp/subscription.hpp>
 #include <seatrac_interfaces/msg/modem_send.hpp>
 
 #include "coug_comms/agent_status_stager_parameters.hpp"

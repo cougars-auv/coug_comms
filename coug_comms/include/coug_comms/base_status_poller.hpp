@@ -14,10 +14,17 @@
 
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
+#include <diagnostic_updater/diagnostic_status_wrapper.hpp>
 #include <diagnostic_updater/diagnostic_updater.hpp>
 #include <memory>
-#include <rclcpp/rclcpp.hpp>
+#include <rclcpp/node.hpp>
+#include <rclcpp/node_options.hpp>
+#include <rclcpp/publisher.hpp>
+#include <rclcpp/subscription.hpp>
+#include <rclcpp/time.hpp>
+#include <rclcpp/timer.hpp>
 #include <seatrac_interfaces/msg/modem_cmd_update.hpp>
 #include <seatrac_interfaces/msg/modem_rec.hpp>
 #include <seatrac_interfaces/msg/modem_send.hpp>

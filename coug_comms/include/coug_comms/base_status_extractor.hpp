@@ -16,11 +16,13 @@
 
 #include <memory>
 #include <nav_msgs/msg/odometry.hpp>
-#include <rclcpp/rclcpp.hpp>
+#include <rclcpp/node.hpp>
+#include <rclcpp/node_options.hpp>
+#include <rclcpp/publisher.hpp>
+#include <rclcpp/subscription.hpp>
 #include <sensor_msgs/msg/imu.hpp>
 #include <string>
 #include <unordered_map>
-#include <vector>
 
 #include "coug_comms/base_status_extractor_parameters.hpp"
 #include "coug_interfaces/msg/agent_status.hpp"

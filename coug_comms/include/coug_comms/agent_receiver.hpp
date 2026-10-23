@@ -15,9 +15,13 @@
 #pragma once
 
 #include <deque>
+#include <diagnostic_updater/diagnostic_status_wrapper.hpp>
 #include <diagnostic_updater/diagnostic_updater.hpp>
 #include <memory>
-#include <rclcpp/rclcpp.hpp>
+#include <rclcpp/client.hpp>
+#include <rclcpp/node.hpp>
+#include <rclcpp/node_options.hpp>
+#include <rclcpp/subscription.hpp>
 #include <seatrac_interfaces/msg/modem_rec.hpp>
 #include <std_srvs/srv/trigger.hpp>
 #include <string>
