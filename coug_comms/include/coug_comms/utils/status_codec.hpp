@@ -138,7 +138,7 @@ inline auto encodeQuaternion(const geometry_msgs::msg::Quaternion& q) -> uint32_
 }
 
 inline auto decodeQuaternion(uint32_t packed) -> geometry_msgs::msg::Quaternion {
-  const int largest_idx = static_cast<int>(packed >> kQuatSelectorShift);
+  const int largest_idx = static_cast<int>((packed >> kQuatSelectorShift) & 0x3U);
 
   std::array<double, 4> q_vec{};
   double sum_squares = 0.0;
